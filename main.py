@@ -12,5 +12,5 @@ if __name__ == '__main__':
     screensize = pygame.display.list_modes()
     size = width, height = screensize[1][0], screensize[1][1]
     screen = pygame.display.set_mode(size)
-    game = Tetris(screen)
+    game = Tetris(screen, size)
     game.start_game()
