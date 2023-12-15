@@ -26,13 +26,17 @@ def load_image(name, colorkey=None, size=None):
 
 class Tetris:
     """Главный класс игры"""
+
     def __init__(self, screen, size):
+        self.pos = None
+        self.coords_letters = None
+        self.start_image = None
         self.screen = screen
         self.size = size
         self.list_snow = []
         self.fps = 60
         self.time_draw_snow = 0
-        self.color_screen = (8, 24, 36)
+        self.start_flag = True
 
     def start_game(self):
         """Начало игры"""
@@ -43,14 +47,23 @@ class Tetris:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.pos = event.pos
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1:
+                        self.pos = None
             self.screen.blit(screen_image, (0, 0))
-            # Рисование снежинок
-            self.draw_snow()
-            # Отображение игрового поля
-            self.draw_field()
+            self.draw_design()
+
             pygame.display.flip()
             clock.tick(self.fps)
         pygame.quit()
+
+    def draw_design(self):
+        """Рисование самого дизайна игры"""
+        self.draw_snow()
+        self.draw_field()
 
     def draw_snow(self):
         """Рисование снежинок"""
@@ -66,7 +79,7 @@ class Tetris:
             if snow[1] <= 0:
                 del self.list_snow[index]
 
-    def draw_field(self):
+    def draw_field(self, draw_cells=False):
         """Рисование поля"""
         image = load_image('cube.png', -1)
         size = image.get_width()
@@ -89,11 +102,50 @@ class Tetris:
             self.screen.blit(image, (x1, y))
             x1 += size
         y = (self.size[1] - 21 * size) // 2 + size
-        pygame.draw.rect(self.screen, 'black',
+        pygame.draw.rect(self.screen, (11, 2, 20),
                          (x + size, y, 10 * size, 19 * size))
-        # Рисование
-        board = Board(size, x, (self.size[1] - 21 * size) // 2 + size)
-        board.render(self.screen)
+        # Рисование клетчатого поля
+        if draw_cells:
+            board = Board(size, x, (self.size[1] - 21 * size) // 2 + size)
+            board.render(self.screen)
+        if self.start_flag:
+            self.draw_start_screen(size)
+
+    def draw_start_screen(self, size_block):
+        """Рисование стартового окна"""
+        text_x = self.size[0] // 2 - 4 * size_block // 2
+        text_y = self.size[1] // 4 - size_block * 2 // 2
+        name_file = None
+        if (self.pos and text_x <= self.pos[0] <= text_x + 4 * size_block and
+                text_y <= self.pos[1] <= text_y + 2 * size_block):
+            name_file = 'start.png'
+        else:
+            name_file = 'start2.png'
+        self.start_image = load_image(name_file, colorkey=-1, size=(4 * size_block, size_block * 2))
+
+        self.screen.blit(self.start_image, (text_x, text_y))
+        # Надпись TETRIS
+        y = self.size[1] // 2 - 3 * size_block
+        if self.coords_letters is None:
+            self.coords_letters = [
+                [self.size[0] // 2 - 3 * size_block, y, 0, -1], [self.size[0] // 2 - 2 * size_block, y, 0, 1],
+                [self.size[0] // 2 - size_block, y, 0, -1], [self.size[0] // 2, y, 0, 1],
+                [self.size[0] // 2 + size_block, y, 0, -1], [self.size[0] // 2 + 2 * size_block, y, 0, 1]
+                              ]
+        letters = ['T', 'E', 'T', 'R', 'I', 'S']
+        for index, val in enumerate(letters):
+            self.screen.blit(load_image(f'tetris/{val}.png', -1, size=(size_block, size_block)),
+                             (self.coords_letters[index][0], self.coords_letters[index][1] + self.coords_letters[index][2]))
+            elem = self.coords_letters[index][2]
+            if self.coords_letters[index][3] == 1:
+                elem += 1
+            else:
+                elem -= 1
+            if abs(elem) == 10:
+                self.coords_letters[index][3] *= -1
+            self.coords_letters[index][2] = elem
+
+        self.screen.blit(load_image('down.png'), (self.size[0] // 2 - size_block * 2, self.size[1] // 2 + size_block * 2))
 
 
 class Board:
