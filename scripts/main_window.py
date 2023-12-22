@@ -6,12 +6,12 @@ import random
 
 
 def load_image(name, colorkey=None, size=None):
-    fullname = os.path.join('data', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
+    full_name = os.path.join('../data', name)
+    if not os.path.isfile(full_name):
+        print(f"Файл с изображением '{full_name}' не найден")
         sys.exit()
 
-    image = pygame.image.load(fullname)
+    image = pygame.image.load(full_name)
     if colorkey is not None:
 
         if colorkey == -1:
@@ -24,118 +24,151 @@ def load_image(name, colorkey=None, size=None):
     return image
 
 
+def load_data():
+    global size_block, start_image_1, start_image_2, image_block, start_button
+    # картинка куба
+    image = load_image('cube.png')
+    size_block = image.get_width()
+    while 24 * size_block > SIZE_SCREEN[1]:
+        size_block -= 1
+    image_block = load_image('cube.png', -1, (size_block, size_block))
+    # Кнопка старта
+    start_image_1 = load_image('start.png', colorkey=-1, size=(4 * size_block, size_block * 2))
+    start_image_2 = load_image('start2.png', colorkey=-1, size=(4 * size_block, size_block * 2))
+    start_button = Button(SIZE_SCREEN[0] // 2 - 4 * size_block // 2,
+                          SIZE_SCREEN[1] // 4 - size_block * 2 // 2, start_image_2)
+    Button(SIZE_SCREEN[0] // 2 - size_block * 2.7, SIZE_SCREEN[1] // 2 + size_block * 2,
+           load_image('up.png', size=(size_block * 2, size_block * 2)))
+    Button(SIZE_SCREEN[0] // 2 - size_block * 4, SIZE_SCREEN[1] // 2 + size_block * 4,
+           load_image('left.png', size=(size_block * 2, size_block * 2)))
+    Button(SIZE_SCREEN[0] // 2 - size_block * 2, SIZE_SCREEN[1] // 2 + size_block * 4,
+           load_image('right.png', size=(size_block * 2, size_block * 2)))
+    Button(SIZE_SCREEN[0] // 2 - size_block * 2.7, SIZE_SCREEN[1] // 2 + size_block * 6,
+           load_image('down.png', size=(size_block * 2, size_block * 2)))
+
+
 class Tetris:
     """Главный класс игры"""
 
-    def __init__(self, screen, size):
-        self.pos = None
-        self.coords_letters = None
+    def __init__(self):
+        y = SIZE_SCREEN[1] // 2 - 3 * size_block
+        self.coords_letters = self.coords_letters = [
+            [SIZE_SCREEN[0] // 2 - 3 * size_block, y, 0, -1], [SIZE_SCREEN[0] // 2 - 2 * size_block, y, 0, 1],
+            [SIZE_SCREEN[0] // 2 - size_block, y, 0, -1], [SIZE_SCREEN[0] // 2, y, 0, 1],
+            [SIZE_SCREEN[0] // 2 + size_block, y, 0, -1], [SIZE_SCREEN[0] // 2 + 2 * size_block, y, 0, 1]
+        ]
         self.start_image = None
-        self.screen = screen
-        self.size = size
-        self.list_snow = []
-        self.fps = 60
-        self.time_draw_snow = 0
+        self.time_draw_particle = 0
         self.start_flag = True
+        self.start_button = start_button
+        self.image_block = image_block
 
     def start_game(self):
         """Начало игры"""
         running = True
         clock = pygame.time.Clock()
-        screen_image = load_image('screen.png', size=(self.size[0], self.size[1]))
+        screen_image = load_image('screen.png', size=(SIZE_SCREEN[0], SIZE_SCREEN[1]))
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                        self.pos = event.pos
+                        start_button.down_click = event.pos
+                        start_button.up_click = None
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
-                        self.pos = None
-            self.screen.blit(screen_image, (0, 0))
+                        start_button.up_click = event.pos
+            screen.blit(screen_image, (0, 0))
+            particle_sprites.draw(screen)
             self.draw_design()
+            if self.start_flag:
+                buttons_sprites.draw(screen)
 
             pygame.display.flip()
-            clock.tick(self.fps)
+            clock.tick(FPS)
         pygame.quit()
 
     def draw_design(self):
         """Рисование самого дизайна игры"""
-        self.draw_snow()
+        self.draw_particle()
         self.draw_field()
+        if self.start_flag:
+            self.draw_start_screen()
 
-    def draw_snow(self):
+    def draw_particle(self):
         """Рисование снежинок"""
-        self.time_draw_snow += 0.01
-        if self.time_draw_snow >= 1:
-            self.time_draw_snow = 0
-            self.list_snow.append([random.random() * self.size[0], self.size[1],
-                                   random.randint(15, 30), random.randint(2, 4)])
-        for index, snow in enumerate(self.list_snow):
-            self.list_snow[index][1] -= snow[2] / self.fps
-            snow = self.list_snow[index]
-            pygame.draw.rect(self.screen, 'white', (snow[0], snow[1], snow[3], snow[3]))
-            if snow[1] <= 0:
-                del self.list_snow[index]
+        self.time_draw_particle += 0.01
+
+        if self.time_draw_particle >= 1:
+            self.time_draw_particle = 0
+            Particle(random.random() * SIZE_SCREEN[0], SIZE_SCREEN[1],
+                     random.randint(15, 30), random.randint(2, 4))
+
+        for particle in particle_sprites:
+            if type(particle) == Particle:
+                particle.update()
+                if particle.rect.y <= 0:
+                    particle_sprites.remove(particle)
 
     def draw_field(self, draw_cells=False):
         """Рисование поля"""
-        image = load_image('cube.png', -1)
-        size = image.get_width()
-        while 24 * size > self.size[1]:
-            size -= 1
         # Рисование боковых стенок поля
-        y = (self.size[1] - 21 * size) // 2
-        x1 = self.size[0] // 2 - size * 6
+        y = (SIZE_SCREEN[1] - 21 * size_block) // 2
+        x1 = SIZE_SCREEN[0] // 2 - size_block * 6
         x = x1
-        image = load_image('cube.png', -1, (size, size))
         for i in range(20):
-            self.screen.blit(image, (x1, y))
-            y += size
-        x2 = x1 + size * 11
-        y = (self.size[1] - 21 * size) // 2
+            screen.blit(self.image_block, (x1, y))
+            y += size_block
+        x2 = x1 + size_block * 11
+        y = (SIZE_SCREEN[1] - 21 * size_block) // 2
         for i in range(20):
-            self.screen.blit(image, (x2, y))
-            y += size
+            screen.blit(self.image_block, (x2, y))
+            y += size_block
         for i in range(12):
-            self.screen.blit(image, (x1, y))
-            x1 += size
-        y = (self.size[1] - 21 * size) // 2 + size
-        pygame.draw.rect(self.screen, (11, 2, 20),
-                         (x + size, y, 10 * size, 19 * size))
-        # Рисование клетчатого поля
-        if draw_cells:
-            board = Board(size, x, (self.size[1] - 21 * size) // 2 + size)
-            board.render(self.screen)
-        if self.start_flag:
-            self.draw_start_screen(size)
+            screen.blit(self.image_block, (x1, y))
+            x1 += size_block
+        y = (SIZE_SCREEN[1] - 21 * size_block) // 2 + size_block
+        pygame.draw.rect(screen, (11, 2, 20),
+                         (x + size_block, y, 10 * size_block, 19 * size_block))
 
-    def draw_start_screen(self, size_block):
+    def draw_start_screen(self):
         """Рисование стартового окна"""
-        text_x = self.size[0] // 2 - 4 * size_block // 2
-        text_y = self.size[1] // 4 - size_block * 2 // 2
-        name_file = None
-        if (self.pos and text_x <= self.pos[0] <= text_x + 4 * size_block and
-                text_y <= self.pos[1] <= text_y + 2 * size_block):
-            name_file = 'start.png'
-        else:
-            name_file = 'start2.png'
-        self.start_image = load_image(name_file, colorkey=-1, size=(4 * size_block, size_block * 2))
+        self.draw_start_button()
+        self.draw_letters()
+        self.draw_instruction()
 
-        self.screen.blit(self.start_image, (text_x, text_y))
-        # Надпись TETRIS
-        y = self.size[1] // 2 - 3 * size_block
-        if self.coords_letters is None:
-            self.coords_letters = [
-                [self.size[0] // 2 - 3 * size_block, y, 0, -1], [self.size[0] // 2 - 2 * size_block, y, 0, 1],
-                [self.size[0] // 2 - size_block, y, 0, -1], [self.size[0] // 2, y, 0, 1],
-                [self.size[0] // 2 + size_block, y, 0, -1], [self.size[0] // 2 + 2 * size_block, y, 0, 1]
-                              ]
+    def draw_start_button(self):
+        x = self.start_button.rect.x
+        y = self.start_button.rect.y
+        w = self.start_button.rect.w
+        h = self.start_button.rect.h
+        if (self.start_button.up_click is None and self.start_button.down_click
+                and x <= self.start_button.down_click[0] <= x + w
+                and y <= self.start_button.down_click[1] <= h + y):
+            image = start_image_1
+        elif self.start_button.up_click is not None and self.start_button.down_click is not None and (
+                x <= self.start_button.down_click[0] <= x + w and
+                y <= self.start_button.down_click[1] <= h + y and x <=
+                self.start_button.up_click[0] <= x + w and
+                y <= self.start_button.up_click[1] <= y + w):
+            # Начать игру
+            self.start_flag = False
+            image = start_image_1
+        else:
+            self.start_button.up_click = None
+            self.start_button.down_click = None
+            image = start_image_2
+
+        self.start_button.image = image
+
+    def draw_letters(self):
+
         letters = ['T', 'E', 'T', 'R', 'I', 'S']
         for index, val in enumerate(letters):
-            self.screen.blit(load_image(f'tetris/{val}.png', -1, size=(size_block, size_block)),
-                             (self.coords_letters[index][0], self.coords_letters[index][1] + self.coords_letters[index][2]))
+            screen.blit(load_image(f'tetris/{val}.png', -1, size=(size_block, size_block)),
+                        (self.coords_letters[index][0], self.coords_letters[index][1] + self.coords_letters[index][2]))
             elem = self.coords_letters[index][2]
             if self.coords_letters[index][3] == 1:
                 elem += 1
@@ -145,16 +178,26 @@ class Tetris:
                 self.coords_letters[index][3] *= -1
             self.coords_letters[index][2] = elem
 
-        self.screen.blit(load_image('down.png'), (self.size[0] // 2 - size_block * 2, self.size[1] // 2 + size_block * 2))
+    def draw_instruction(self):
+        # Доделай нормальную инструкцию
+        ...
 
 
 class Board:
     # создание поля
-    def __init__(self, cell_size, left, top):
+    def __init__(self, width_count, height_count, left, top):
         self.screen = None
-        self.width = 12
-        self.height = 20
-        self.screen = None
+        self.width = width_count
+        self.height = height_count
+        # self.board = [[choice(['red', 'blue']) for _ in range(width_count)] for _ in range(height_count)]
+        self.count = 0
+        # значения по умолчанию
+        self.left = left
+        self.top = top
+        self.cell_size = 30
+
+    # настройка внешнего вида
+    def set_view(self, left, top, cell_size):
         self.left = left
         self.top = top
         self.cell_size = cell_size
@@ -164,8 +207,10 @@ class Board:
         x, y = 0, 0
         for i in range(self.height):
             for j in range(self.width):
-                pygame.draw.rect(screen, 'orange', (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
-
+                pygame.draw.rect(screen, 'white', (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
+                pygame.draw.circle(screen, self.board[i][j],
+                                   (self.left + j * self.cell_size + self.cell_size / 2,
+                                    self.top + i * self.cell_size + self.cell_size / 2), self.cell_size / 2 - 2)
                 x += self.cell_size
             y += self.cell_size
             x = 0
@@ -204,3 +249,72 @@ class Board:
             if flag:
                 self.draw_cells(color, x, y)
                 self.count += 1
+
+    def draw_cells(self, color, x_cell, y_cell):
+        for i in range(self.width):
+            x = self.left + i * self.cell_size
+            y = self.top + y_cell * self.cell_size
+
+            pygame.draw.circle(self.screen, color, (x + self.cell_size / 2, y + self.cell_size / 2),
+                               self.cell_size / 2 - 2)
+            if color == 'red' and self.board[y_cell][i] == 'blue':
+                self.board[y_cell][i] = 'red'
+            elif color == 'blue' and self.board[y_cell][i] == 'red':
+                self.board[y_cell][i] = 'blue'
+        for i in range(self.height):
+            if i != y_cell:
+                x = self.left + x_cell * self.cell_size
+                y = self.top + i * self.cell_size
+                pygame.draw.circle(self.screen, color, (x + self.cell_size / 2, y + self.cell_size / 2),
+                                   self.cell_size / 2 - 2)
+                if color == 'red' and self.board[i][x_cell] == 'blue':
+                    self.board[i][x_cell] = 'red'
+                elif color == 'blue' and self.board[i][x_cell] == 'red':
+                    self.board[i][x_cell] = 'blue'
+
+
+class Particle(pygame.sprite.Sprite):
+    def __init__(self, x, y, dy, size):
+        super().__init__(particle_sprites)
+        self.image = pygame.Surface((size, size))
+        self.image.fill('white')
+        self.rect = pygame.Rect(x, y, size, size)
+        # у каждой частицы своя скорость — это вектор
+        self.velocity = [0, dy]
+        self.size = size
+        self.y = y
+
+    def update(self):
+        self.y -= self.velocity[1] / FPS
+        self.rect.y = self.y
+
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, x, y, image):
+        super().__init__(buttons_sprites)
+        self.image = image
+        self.up_click = None
+        self.down_click = None
+        self.rect = pygame.Rect(x, y, image.get_width(), image.get_height())
+
+
+if __name__ == '__main__':
+    pygame.init()
+
+    pygame.display.set_caption('Тетрис')
+    fullname = os.path.join('../data', 'icon.png')
+    image_icon = pygame.image.load(fullname)
+    pygame.display.set_icon(image_icon)
+    screensize = pygame.display.list_modes()
+    SIZE_SCREEN = width, height = screensize[1][0], screensize[1][1]
+    screen = pygame.display.set_mode(SIZE_SCREEN)
+    FPS = 60
+    size_block = 0
+    start_image_1, start_image_2, image_block = None, None, None
+    start_button = None
+    particle_sprites = pygame.sprite.Group()
+    buttons_sprites = pygame.sprite.Group()
+    load_data()
+
+    game = Tetris()
+    game.start_game()
