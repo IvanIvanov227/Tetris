@@ -25,43 +25,57 @@ def load_image(name, colorkey=None, size=None):
 
 
 def load_data():
-    global size_block, start_image_1, start_image_2, image_block, start_button
+    global SIZE_BLOCK, image_block
     # картинка куба
     image = load_image('cube.png')
-    size_block = image.get_width()
-    while 24 * size_block > SIZE_SCREEN[1]:
-        size_block -= 1
-    image_block = load_image('cube.png', -1, (size_block, size_block))
+    SIZE_BLOCK = image.get_width()
+    while 24 * SIZE_BLOCK > SIZE_SCREEN[1]:
+        SIZE_BLOCK -= 1
+    image_block = load_image('cube.png', -1, (SIZE_BLOCK, SIZE_BLOCK))
+    load_buttons()
+
+
+def load_buttons():
+    global start_button, up_button, right_button, down_button
     # Кнопка старта
-    start_image_1 = load_image('start.png', colorkey=-1, size=(4 * size_block, size_block * 2))
-    start_image_2 = load_image('start2.png', colorkey=-1, size=(4 * size_block, size_block * 2))
-    start_button = Button(SIZE_SCREEN[0] // 2 - 4 * size_block // 2,
-                          SIZE_SCREEN[1] // 4 - size_block * 2 // 2, start_image_2)
-    Button(SIZE_SCREEN[0] // 2 - size_block * 2.7, SIZE_SCREEN[1] // 2 + size_block * 2,
-           load_image('up.png', size=(size_block * 2, size_block * 2)))
-    Button(SIZE_SCREEN[0] // 2 - size_block * 4, SIZE_SCREEN[1] // 2 + size_block * 4,
-           load_image('left.png', size=(size_block * 2, size_block * 2)))
-    Button(SIZE_SCREEN[0] // 2 - size_block * 2, SIZE_SCREEN[1] // 2 + size_block * 4,
-           load_image('right.png', size=(size_block * 2, size_block * 2)))
-    Button(SIZE_SCREEN[0] // 2 - size_block * 2.7, SIZE_SCREEN[1] // 2 + size_block * 6,
-           load_image('down.png', size=(size_block * 2, size_block * 2)))
+    start_image_1 = load_image('start.png', colorkey=-1, size=(4 * SIZE_BLOCK, SIZE_BLOCK * 2))
+    start_image_2 = load_image('start2.png', colorkey=-1, size=(4 * SIZE_BLOCK, SIZE_BLOCK * 2))
+    start_button = Button(SIZE_SCREEN[0] // 2 - 4 * SIZE_BLOCK // 2,
+                          SIZE_SCREEN[1] // 2 + SIZE_BLOCK * 4, start_image_1, start_image_2)
+    up_button = Button(SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 4,
+                       load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)))
+    Button(SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2,
+           load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)))
+    right_button = Button(SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 2, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2,
+                          load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)))
+    down_button = Button(SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 + SIZE_BLOCK // 10,
+                         load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)))
+    easy_img = load_image(f'easy.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+    normal_img = load_image(f'normal.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+    hard_img = load_image(f'hard.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+    easy_button = Button(SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5, SIZE_BLOCK * 19, easy_img, easy_img)
+    normal_button = Button(SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8, SIZE_BLOCK * 19, normal_img, normal_img)
+    hard_button = Button(SIZE_SCREEN[0] // 2 + SIZE_BLOCK * 1.5, SIZE_BLOCK * 19, hard_img, hard_img)
 
 
 class Tetris:
     """Главный класс игры"""
 
     def __init__(self):
-        y = SIZE_SCREEN[1] // 2 - 3 * size_block
+        y = SIZE_SCREEN[1] // 4 - SIZE_BLOCK * 2 // 2
         self.coords_letters = self.coords_letters = [
-            [SIZE_SCREEN[0] // 2 - 3 * size_block, y, 0, -1], [SIZE_SCREEN[0] // 2 - 2 * size_block, y, 0, 1],
-            [SIZE_SCREEN[0] // 2 - size_block, y, 0, -1], [SIZE_SCREEN[0] // 2, y, 0, 1],
-            [SIZE_SCREEN[0] // 2 + size_block, y, 0, -1], [SIZE_SCREEN[0] // 2 + 2 * size_block, y, 0, 1]
+            [SIZE_SCREEN[0] // 2 - 3 * SIZE_BLOCK, y, 0, -1], [SIZE_SCREEN[0] // 2 - 2 * SIZE_BLOCK, y, 0, 1],
+            [SIZE_SCREEN[0] // 2 - SIZE_BLOCK, y, 0, -1], [SIZE_SCREEN[0] // 2, y, 0, 1],
+            [SIZE_SCREEN[0] // 2 + SIZE_BLOCK, y, 0, -1], [SIZE_SCREEN[0] // 2 + 2 * SIZE_BLOCK, y, 0, 1]
         ]
         self.start_image = None
         self.time_draw_particle = 0
         self.start_flag = True
         self.start_button = start_button
+        self.up_button, self.right_button, self.down_button = up_button, right_button, down_button
         self.image_block = image_block
+        self.down_click = None
+        self.up_click = None
 
     def start_game(self):
         """Начало игры"""
@@ -75,11 +89,11 @@ class Tetris:
                     running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                        start_button.down_click = event.pos
-                        start_button.up_click = None
+                        self.down_click = event.pos
+                        self.up_click = None
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
-                        start_button.up_click = event.pos
+                        self.up_click = event.pos
             screen.blit(screen_image, (0, 0))
             particle_sprites.draw(screen)
             self.draw_design()
@@ -115,59 +129,39 @@ class Tetris:
     def draw_field(self, draw_cells=False):
         """Рисование поля"""
         # Рисование боковых стенок поля
-        y = (SIZE_SCREEN[1] - 21 * size_block) // 2
-        x1 = SIZE_SCREEN[0] // 2 - size_block * 6
+        y = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
+        x1 = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 6
         x = x1
         for i in range(20):
             screen.blit(self.image_block, (x1, y))
-            y += size_block
-        x2 = x1 + size_block * 11
-        y = (SIZE_SCREEN[1] - 21 * size_block) // 2
+            y += SIZE_BLOCK
+        x2 = x1 + SIZE_BLOCK * 11
+        y = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
         for i in range(20):
             screen.blit(self.image_block, (x2, y))
-            y += size_block
+            y += SIZE_BLOCK
         for i in range(12):
             screen.blit(self.image_block, (x1, y))
-            x1 += size_block
-        y = (SIZE_SCREEN[1] - 21 * size_block) // 2 + size_block
+            x1 += SIZE_BLOCK
+        y = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2 + SIZE_BLOCK
         pygame.draw.rect(screen, (11, 2, 20),
-                         (x + size_block, y, 10 * size_block, 19 * size_block))
+                         (x + SIZE_BLOCK, y, 10 * SIZE_BLOCK, 19 * SIZE_BLOCK))
 
     def draw_start_screen(self):
         """Рисование стартового окна"""
-        self.draw_start_button()
+        self.draw_buttons()
         self.draw_letters()
         self.draw_instruction()
 
-    def draw_start_button(self):
-        x = self.start_button.rect.x
-        y = self.start_button.rect.y
-        w = self.start_button.rect.w
-        h = self.start_button.rect.h
-        if (self.start_button.up_click is None and self.start_button.down_click
-                and x <= self.start_button.down_click[0] <= x + w
-                and y <= self.start_button.down_click[1] <= h + y):
-            image = start_image_1
-        elif self.start_button.up_click is not None and self.start_button.down_click is not None and (
-                x <= self.start_button.down_click[0] <= x + w and
-                y <= self.start_button.down_click[1] <= h + y and x <=
-                self.start_button.up_click[0] <= x + w and
-                y <= self.start_button.up_click[1] <= y + w):
-            # Начать игру
-            self.start_flag = False
-            image = start_image_1
-        else:
-            self.start_button.up_click = None
-            self.start_button.down_click = None
-            image = start_image_2
-
-        self.start_button.image = image
+    def draw_buttons(self):
+        for button in buttons_sprites:
+            button.check_do_select(self.up_click, self.down_click)
 
     def draw_letters(self):
 
         letters = ['T', 'E', 'T', 'R', 'I', 'S']
         for index, val in enumerate(letters):
-            screen.blit(load_image(f'tetris/{val}.png', -1, size=(size_block, size_block)),
+            screen.blit(load_image(f'tetris/{val}.png', -1, size=(SIZE_BLOCK, SIZE_BLOCK)),
                         (self.coords_letters[index][0], self.coords_letters[index][1] + self.coords_letters[index][2]))
             elem = self.coords_letters[index][2]
             if self.coords_letters[index][3] == 1:
@@ -179,98 +173,22 @@ class Tetris:
             self.coords_letters[index][2] = elem
 
     def draw_instruction(self):
-        # Доделай нормальную инструкцию
-        ...
+        size = int(SIZE_SCREEN[0] / SIZE_BLOCK / 1.9)
+        font = pygame.font.Font(None, size)
+        text = font.render("Поворот против часовой стрелки", True, (226, 235, 231))
+        text_x = self.up_button.rect.x + self.up_button.rect.w
+        text_y = self.up_button.rect.y + self.up_button.rect.h // 2
+        screen.blit(text, (text_x, text_y))
 
+        text2 = font.render("Смещение фигуры", True, (226, 235, 231))
+        text_x2 = self.right_button.rect.x + self.right_button.rect.w
+        text_y2 = self.right_button.rect.y + self.right_button.rect.h // 2
+        screen.blit(text2, (text_x2, text_y2))
 
-class Board:
-    # создание поля
-    def __init__(self, width_count, height_count, left, top):
-        self.screen = None
-        self.width = width_count
-        self.height = height_count
-        # self.board = [[choice(['red', 'blue']) for _ in range(width_count)] for _ in range(height_count)]
-        self.count = 0
-        # значения по умолчанию
-        self.left = left
-        self.top = top
-        self.cell_size = 30
-
-    # настройка внешнего вида
-    def set_view(self, left, top, cell_size):
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
-
-    def render(self, screen):
-        self.screen = screen
-        x, y = 0, 0
-        for i in range(self.height):
-            for j in range(self.width):
-                pygame.draw.rect(screen, 'white', (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
-                pygame.draw.circle(screen, self.board[i][j],
-                                   (self.left + j * self.cell_size + self.cell_size / 2,
-                                    self.top + i * self.cell_size + self.cell_size / 2), self.cell_size / 2 - 2)
-                x += self.cell_size
-            y += self.cell_size
-            x = 0
-
-    def get_cell(self, mouse_pos):
-        """Возвращает координаты клетки в виде кортежа"""
-        x = mouse_pos[0]
-        y = mouse_pos[1]
-        if (self.left + self.width * self.cell_size >= x >= self.left
-                and self.top + self.height * self.cell_size >= y >= self.top):
-            n_x = (x - self.left) // self.cell_size
-            n_y = (y - self.top) // self.cell_size
-            return n_x, n_y
-        else:
-            return None
-
-    def get_click(self, mouse_pos):
-        """Изменяет поле, опираясь на полученные координаты клетки"""
-        cell = self.get_cell(mouse_pos)
-        self.on_click(cell)
-
-    def on_click(self, cell_coords):
-        """Получает событие нажатия и вызывает первые два метода"""
-        if cell_coords is not None:
-            x, y = cell_coords
-            place = self.board[y][x]
-            flag = False
-            color = None
-            if self.count % 2 == 0 and place == 'red':
-                color = 'red'
-                flag = True
-            elif self.count % 2 != 0 and place == 'blue':
-                color = 'blue'
-                flag = True
-
-            if flag:
-                self.draw_cells(color, x, y)
-                self.count += 1
-
-    def draw_cells(self, color, x_cell, y_cell):
-        for i in range(self.width):
-            x = self.left + i * self.cell_size
-            y = self.top + y_cell * self.cell_size
-
-            pygame.draw.circle(self.screen, color, (x + self.cell_size / 2, y + self.cell_size / 2),
-                               self.cell_size / 2 - 2)
-            if color == 'red' and self.board[y_cell][i] == 'blue':
-                self.board[y_cell][i] = 'red'
-            elif color == 'blue' and self.board[y_cell][i] == 'red':
-                self.board[y_cell][i] = 'blue'
-        for i in range(self.height):
-            if i != y_cell:
-                x = self.left + x_cell * self.cell_size
-                y = self.top + i * self.cell_size
-                pygame.draw.circle(self.screen, color, (x + self.cell_size / 2, y + self.cell_size / 2),
-                                   self.cell_size / 2 - 2)
-                if color == 'red' and self.board[i][x_cell] == 'blue':
-                    self.board[i][x_cell] = 'red'
-                elif color == 'blue' and self.board[i][x_cell] == 'red':
-                    self.board[i][x_cell] = 'blue'
+        text3 = font.render("Ускорение фигуры вниз", True, (226, 235, 231))
+        text_x3 = self.down_button.rect.x + self.down_button.rect.w
+        text_y3 = self.down_button.rect.y + self.down_button.rect.h // 2
+        screen.blit(text3, (text_x3, text_y3))
 
 
 class Particle(pygame.sprite.Sprite):
@@ -290,12 +208,30 @@ class Particle(pygame.sprite.Sprite):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, prev_image, select_image):
         super().__init__(buttons_sprites)
-        self.image = image
-        self.up_click = None
-        self.down_click = None
-        self.rect = pygame.Rect(x, y, image.get_width(), image.get_height())
+        self.prev_image = prev_image
+        self.select_image = select_image
+        self.image = prev_image
+        self.rect = pygame.Rect(x, y, self.image.get_width(), self.image.get_height())
+
+    def check_do_select(self, up_click, down_click):
+        x = self.rect.x
+        y = self.rect.y
+        w = self.rect.w
+        h = self.rect.h
+        if (up_click is None and down_click
+                and x <= down_click[0] <= x + w
+                and y <= down_click[1] <= h + y):
+            self.image = self.select_image
+        elif up_click is not None and down_click is not None and (
+                x <= down_click[0] <= x + w and
+                y <= down_click[1] <= h + y and x <=
+                up_click[0] <= x + w and
+                y <= up_click[1] <= y + w):
+            self.image = self.select_image
+        else:
+            self.image = self.prev_image
 
 
 if __name__ == '__main__':
@@ -309,9 +245,9 @@ if __name__ == '__main__':
     SIZE_SCREEN = width, height = screensize[1][0], screensize[1][1]
     screen = pygame.display.set_mode(SIZE_SCREEN)
     FPS = 60
-    size_block = 0
-    start_image_1, start_image_2, image_block = None, None, None
-    start_button = None
+    SIZE_BLOCK = 0
+    image_block = None
+    start_button, up_button, right_button, down_button = None, None, None, None
     particle_sprites = pygame.sprite.Group()
     buttons_sprites = pygame.sprite.Group()
     load_data()
