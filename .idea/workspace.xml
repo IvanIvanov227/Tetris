@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a9c4c58a-47a7-4105-baeb-9900bd78c2f4" name="Changes" comment="Добавил файл Tetris.iml" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="114cc71231952514449cb7d000812d804cc79d51" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="2ZP8UsvmQbygtmOCSLNpRXzqpM5" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/sivko/PycharmProjects/Tetris/data&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\sivko\PycharmProjects\Tetris\data" />
+      <recent name="C:\Users\sivko\PycharmProjects\Tetris\data\tetris" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\sivko\PycharmProjects\Tetris\data" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="Tetris" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a9c4c58a-47a7-4105-baeb-9900bd78c2f4" name="Changes" comment="" />
+      <created>1702312372464</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1702312372464</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Init">
+      <option name="closed" value="true" />
+      <created>1702312813226</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1702312813226</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Главное окно">
+      <option name="closed" value="true" />
+      <created>1702314816493</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1702314816493</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Добавил отрисовывание снежинок на заднем фоне">
+      <option name="closed" value="true" />
+      <created>1702316436403</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1702316436403</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Добавил отрисовывание поля">
+      <option name="closed" value="true" />
+      <created>1702400940597</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1702400940597</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Добавил графики в начальный экран">
+      <option name="closed" value="true" />
+      <created>1702661270648</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1702661270648</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Рефакторинг кода">
+      <option name="closed" value="true" />
+      <created>1703270108188</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1703270108188</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Почти закончил дизайн стартового окна">
+      <option name="closed" value="true" />
+      <created>1703615593852</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1703615593852</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Закончил дизайн стартового окна">
+      <option name="closed" value="true" />
+      <created>1704307058391</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1704307058391</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Начал делать игровой процесс">
+      <option name="closed" value="true" />
+      <created>1704381901717</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1704381901717</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Добавил файл Tetris.iml">
+      <option name="closed" value="true" />
+      <created>1704387887050</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1704387887050</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Init" />
+    <MESSAGE value="Главное окно" />
+    <MESSAGE value="Добавил отрисовывание снежинок на заднем фоне" />
+    <MESSAGE value="Добавил отрисовывание поля" />
+    <MESSAGE value="Добавил графики в начальный экран" />
+    <MESSAGE value="Рефакторинг кода" />
+    <MESSAGE value="Почти закончил дизайн стартового окна" />
+    <MESSAGE value="Закончил дизайн стартового окна" />
+    <MESSAGE value="Начал делать игровой процесс" />
+    <MESSAGE value="Добавил файл Tetris.iml" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавил файл Tetris.iml" />
+  </component>
+</project>
