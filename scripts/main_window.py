@@ -36,10 +36,10 @@ TYPES_OF_SHAPES = {
         4: ((1, 1, 0), (0, 1, 0), (0, 1, 0))
     },
     4: {
-        1: ((0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
-        2: ((0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
-        3: ((0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
-        4: ((0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0))
+        1: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
+        2: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
+        3: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
+        4: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0))
     },
     5: {
         1: ((0, 1, 1), (1, 1, 0), (0, 0, 0)),
@@ -282,7 +282,7 @@ class Tetris:
             self.coords_letters[index][2] = elem
 
     def draw_instruction(self):
-        size = int(SIZE_SCREEN[0] / SIZE_BLOCK / 1.9)
+        size = int(SIZE_SCREEN[0] / SIZE_BLOCK / 2.1)
         font = pygame.font.Font(None, size)
         text = font.render("Поворот против часовой стрелки", True, (226, 235, 231))
         text_x = self.up_button.rect.x + self.up_button.rect.w
@@ -325,11 +325,22 @@ class MainGame:
                                                   text_w + 20, text_h + 20), 4)
 
         pygame.draw.rect(screen, (240, 239, 224),
-                         (self.left + 12 * SIZE_BLOCK, self.top, 5 * SIZE_BLOCK, 6 * SIZE_BLOCK), 4)
-
+                         (self.left + 12 * SIZE_BLOCK, self.top, 6 * SIZE_BLOCK, 6 * SIZE_BLOCK), 4)
+        x = self.left + 12 * SIZE_BLOCK
+        y = self.top
+        for i in range(6):
+            pygame.draw.line(screen, (181, 178, 5),
+                             (x + 4, y + i * SIZE_BLOCK), (x + 6 * SIZE_BLOCK - 4, y + i * SIZE_BLOCK))
+        for j in range(6):
+            pygame.draw.line(screen, (181, 178, 5),
+                             (x + j * SIZE_BLOCK, y + 4), (x + j * SIZE_BLOCK, y + 6 * SIZE_BLOCK - 4))
+        x_center = x + SIZE_BLOCK * 3
+        y_center = y + SIZE_BLOCK * 3
         if self.shape is None:
             self.shape = Shape()
-        self.shape.draw(self.left + 13 * SIZE_BLOCK, self.top + SIZE_BLOCK)
+        count_width = len(TYPES_OF_SHAPES[self.shape.form][self.shape.rotate][0])
+        count_height = len(TYPES_OF_SHAPES[self.shape.form][self.shape.rotate])
+        self.shape.draw(x_center - SIZE_BLOCK * count_width // 2, y_center - SIZE_BLOCK * count_height // 2)
 
     def load_button(self):
         image_pause = load_image('pause.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
@@ -379,26 +390,38 @@ class Shape:
 
     def draw_cube(self, x, y):
         pygame.draw.rect(screen, self.color2,
-                         pygame.Rect(x + SIZE_BLOCK // 4, y + SIZE_BLOCK // 4, SIZE_BLOCK // 2, SIZE_BLOCK // 2))
+                         pygame.Rect(x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4, SIZE_BLOCK / 2, SIZE_BLOCK / 2))
         pygame.draw.rect(screen, self.color3,
-                         pygame.Rect(x, y + SIZE_BLOCK // 4, SIZE_BLOCK // 4, SIZE_BLOCK // 2))
+                         pygame.Rect(x, y + SIZE_BLOCK / 4, SIZE_BLOCK / 4, SIZE_BLOCK / 2))
         pygame.draw.rect(screen, self.color3,
-                         pygame.Rect(x + SIZE_BLOCK * 3 // 4, y + SIZE_BLOCK // 4, SIZE_BLOCK // 4, SIZE_BLOCK // 2))
+                         pygame.Rect(x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4, SIZE_BLOCK / 4 + 1, SIZE_BLOCK / 2))
         pygame.draw.rect(screen, self.color1,
-                         pygame.Rect(x + SIZE_BLOCK // 4, y, SIZE_BLOCK // 2, SIZE_BLOCK // 4))
+                         pygame.Rect(x + SIZE_BLOCK / 4, y, SIZE_BLOCK / 2, SIZE_BLOCK / 4))
         pygame.draw.rect(screen, self.color4,
-                         pygame.Rect(x + SIZE_BLOCK // 4, y + SIZE_BLOCK * 3 // 4, SIZE_BLOCK // 2, SIZE_BLOCK // 4))
-        # t1 = [self.width // 2 - self.width_cube // 2, self.height // 2]
-        # t2 = [self.width // 2, self.height // 2 - self.width_cube // 2]
-        # t3 = [self.width // 2 + self.width_cube, self.height // 2 - self.width_cube // 2]
-        # t4 = [self.width // 2 + self.width_cube // 2, self.height // 2]
-        # pygame.draw.polygon(self.screen, color1, [t1, t2, t3, t4])
-        #
-        # t1 = [self.width // 2 + self.width_cube // 2, self.height // 2]
-        # t2 = [self.width // 2 + self.width_cube // 2, self.height // 2 + self.width_cube]
-        # t3 = [self.width // 2 + self.width_cube, self.height // 2 + self.width_cube // 2]
-        # t4 = [self.width // 2 + self.width_cube, self.height // 2 - self.width_cube // 2]
-        # pygame.draw.polygon(self.screen, color3, [t1, t2, t3, t4])
+                         pygame.Rect(x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4, SIZE_BLOCK / 2, SIZE_BLOCK / 4 + 1))
+
+        pygame.draw.polygon(screen, self.color3,
+                            ((x, y), (x, y + SIZE_BLOCK / 4), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4)))
+        pygame.draw.polygon(screen, self.color3,
+                            ((x, y + SIZE_BLOCK * 3 / 4), (x, y + SIZE_BLOCK),
+                             (x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4)))
+        pygame.draw.polygon(screen, self.color1,
+                            ((x, y), (x + SIZE_BLOCK / 4, y), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4)))
+        pygame.draw.polygon(screen, self.color1,
+                            ((x + SIZE_BLOCK * 3 / 4, y), (x + SIZE_BLOCK, y),
+                             (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4)))
+        pygame.draw.polygon(screen, self.color3,
+                            ((x + SIZE_BLOCK, y), (x + SIZE_BLOCK, y + SIZE_BLOCK / 4),
+                             (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4)))
+        pygame.draw.polygon(screen, self.color3,
+                            ((x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK * 3 / 4),
+                             (x + SIZE_BLOCK, y + SIZE_BLOCK * 3 / 4), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
+        pygame.draw.polygon(screen, self.color4,
+                            ((x, y + SIZE_BLOCK), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4),
+                             (x + SIZE_BLOCK / 4, y + SIZE_BLOCK)))
+        pygame.draw.polygon(screen, self.color4,
+                            ((x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK * 3 / 4),
+                             (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
 
 
 class Board:
@@ -423,7 +446,7 @@ class Board:
         x, y = 0, 0
         for i in range(self.height):
             for j in range(self.width):
-                pygame.draw.rect(screen, 'white', (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
+                pygame.draw.rect(screen, (181, 178, 5), (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
 
                 x += self.cell_size
             y += self.cell_size
