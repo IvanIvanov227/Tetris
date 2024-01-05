@@ -15,12 +15,13 @@ group_buttons = []
 particle_sprites = pygame.sprite.Group()
 buttons_start_sprites = pygame.sprite.Group()
 buttons_main_sprites = pygame.sprite.Group()
+shape_sprites = pygame.sprite.Group()
 
 TYPES_OF_SHAPES = {
     1: {
-        1: ((0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0), (0, 0, 0, 0)),
+        1: ((0, 0, 0, 0), (0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0)),
         2: ((0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0)),
-        3: ((0, 0, 0, 0), (0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0)),
+        3: ((0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0), (0, 0, 0, 0)),
         4: ((0, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 0))
     },
     2: {
@@ -36,10 +37,10 @@ TYPES_OF_SHAPES = {
         4: ((1, 1, 0), (0, 1, 0), (0, 1, 0))
     },
     4: {
-        1: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
-        2: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
-        3: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0)),
-        4: ((0, 0, 0, 0), (0, 1, 1, 0), (0, 1, 1, 0), (0, 0, 0, 0))
+        1: ((0, 0), (1, 1), (1, 1), (0, 0)),
+        2: ((0, 0), (1, 1), (1, 1), (0, 0)),
+        3: ((0, 0), (1, 1), (1, 1), (0, 0)),
+        4: ((0, 0), (1, 1), (1, 1), (0, 0))
     },
     5: {
         1: ((0, 1, 1), (1, 1, 0), (0, 0, 0)),
@@ -62,6 +63,17 @@ TYPES_OF_SHAPES = {
 }
 
 COLORS = ((19, 252, 240), (2, 13, 235), (242, 173, 15), (243, 250, 4), (26, 250, 4), (155, 4, 250), (250, 7, 49))
+
+
+START_SHAPES = {
+    1: ((1, 1, 1, 1), ),
+    2: ((1, 0, 0), (1, 1, 1)),
+    3: ((0, 0, 1), (1, 1, 1)),
+    4: ((1, 1), (1, 1)),
+    5: ((0, 1, 1), (1, 1, 0)),
+    6: ((0, 1, 0), (1, 1, 1)),
+    7: ((1, 1, 0), (0, 1, 1))
+}
 
 
 def terminate():
@@ -101,15 +113,18 @@ class Tetris:
         self.down_click = None
         self.up_click = None
         self.level = 'easy'
+        self.action = None
 
     def start_game(self):
         """Начало игры"""
         clock = pygame.time.Clock()
         screen_image = load_image('screen.png', size=(SIZE_SCREEN[0], SIZE_SCREEN[1]))
         self.load_data()
-        self.main_game = MainGame()
+
         while True:
             for event in pygame.event.get():
+                # Получаем список зажатых клавиш
+                keys = pygame.key.get_pressed()
                 if event.type == pygame.QUIT:
                     terminate()
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -120,14 +135,29 @@ class Tetris:
                     if event.button == 1:
                         self.up_click = event.pos
 
+                if event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_w, pygame.K_UP):
+                        self.action = 'rotate'
+
+                    if event.key in (pygame.K_a, pygame.K_LEFT):
+                        self.action = 'left'
+
+                    elif event.key in (pygame.K_d, pygame.K_RIGHT):
+                        self.action = 'right'
+
+                    elif event.key in (pygame.K_s, pygame.K_DOWN):
+                        self.action = 'down'
+            # if self.action is None:
+            #     if keys[pygame.K_LEFT]:
+            #         self.action = 'left'
+            #     elif keys[pygame.K_RIGHT]:
+            #         self.action = 'right'
+            #     elif keys[pygame.K_DOWN]:
+            #         self.action = 'down'
+
             screen.blit(screen_image, (0, 0))
-            particle_sprites.draw(screen)
-            self.draw_design()
-            if self.start_flag:
-                buttons_start_sprites.draw(screen)
-            else:
-                buttons_main_sprites.draw(screen)
-                self.main_game.draw()
+            self.draw_game(self.action)
+            self.action = None
             pygame.display.flip()
             clock.tick(FPS)
 
@@ -198,6 +228,7 @@ class Tetris:
 
     def click_start_button(self):
         self.start_flag = False
+        self.main_game = MainGame(self.level)
 
     def click_level(self, name_level):
         self.level = name_level
@@ -205,16 +236,24 @@ class Tetris:
     def open_settings(self):
         ...
 
-    def draw_design(self):
+    def draw_game(self, action):
         """Рисование самого дизайна игры"""
-        self.draw_particle()
+        particle_sprites.draw(screen)
+        self.update_particles()
         self.draw_field()
         self.draw_buttons()
-        if self.start_flag:
-            self.draw_start_screen()
 
-    def draw_particle(self):
-        """Рисование снежинок"""
+        if self.start_flag:
+            self.draw_letters()
+            self.draw_instruction()
+            buttons_start_sprites.draw(screen)
+        else:
+            buttons_main_sprites.draw(screen)
+            self.main_game.draw()
+            self.main_game.update_shapes(action)
+
+    def update_particles(self):
+        """Обновление снежинок"""
         self.time_draw_particle += 0.01
 
         if self.time_draw_particle >= 1:
@@ -228,7 +267,7 @@ class Tetris:
                 if particle.rect.y <= 0:
                     particle_sprites.remove(particle)
 
-    def draw_field(self, draw_cells=False):
+    def draw_field(self):
         """Рисование поля"""
         # Рисование боковых стенок поля
         y = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
@@ -246,17 +285,11 @@ class Tetris:
         for i in range(12):
             screen.blit(self.image_block, (x1, y))
             x1 += SIZE_BLOCK
-        y = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2 + SIZE_BLOCK
+        y = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
         pygame.draw.rect(screen, (11, 2, 20),
-                         (x + SIZE_BLOCK, y, 10 * SIZE_BLOCK, 19 * SIZE_BLOCK))
-
-    def draw_start_screen(self):
-        """Рисование стартового окна"""
-        self.draw_letters()
-        self.draw_instruction()
+                         (x + SIZE_BLOCK, y, 10 * SIZE_BLOCK, 20 * SIZE_BLOCK))
 
     def draw_buttons(self):
-
         for group in group_buttons:
             current_button = group.check_do_select_buttons_for_group(self.up_click, self.down_click)
 
@@ -301,13 +334,16 @@ class Tetris:
 
 
 class MainGame:
-    def __init__(self):
-        self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2 + SIZE_BLOCK
-        self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 6 + SIZE_BLOCK
-        self.board = Board(10, 19, self.left, self.top)
+    def __init__(self, level):
+        self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
+        self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
+        self.board = Board(10, 20, self.left, self.top)
         self.points = 0
-        self.make_shape = True
-        self.shape = None
+        self.shape_now = None
+        self.shape_future = None
+        self.update_shape = True
+        self.level = level
+        self.time_update_shape = 0
         self.load_button()
 
     def draw(self):
@@ -331,27 +367,54 @@ class MainGame:
         for i in range(6):
             pygame.draw.line(screen, (181, 178, 5),
                              (x + 4, y + i * SIZE_BLOCK), (x + 6 * SIZE_BLOCK - 4, y + i * SIZE_BLOCK))
-        for j in range(6):
             pygame.draw.line(screen, (181, 178, 5),
-                             (x + j * SIZE_BLOCK, y + 4), (x + j * SIZE_BLOCK, y + 6 * SIZE_BLOCK - 4))
+                             (x + i * SIZE_BLOCK, y + 4), (x + i * SIZE_BLOCK, y + 6 * SIZE_BLOCK - 4))
+
         x_center = x + SIZE_BLOCK * 3
         y_center = y + SIZE_BLOCK * 3
-        if self.shape is None:
-            self.shape = Shape()
-        count_width = len(TYPES_OF_SHAPES[self.shape.form][self.shape.rotate][0])
-        count_height = len(TYPES_OF_SHAPES[self.shape.form][self.shape.rotate])
-        self.shape.draw(x_center - SIZE_BLOCK * count_width // 2, y_center - SIZE_BLOCK * count_height // 2)
+        if self.update_shape:
+            self.update_shape = False
+            if self.shape_now is not None:
+                self.shape_now = self.shape_future
+            else:
+                self.shape_now = Shape(self.board)
+
+            self.shape_future = Shape(self.board)
+
+            count_x = len(START_SHAPES[self.shape_now.form][0]) // 2
+            self.shape_now.rect.x = SIZE_SCREEN[0] // 2 - count_x * SIZE_BLOCK
+            self.shape_now.rect.y = self.top
+            self.shape_now.set_coord_board()
+
+            self.shape_now.draw(0, 0, self.shape_now.image)
+
+            count_width = len(START_SHAPES[self.shape_future.form][0])
+            count_height = len(START_SHAPES[self.shape_future.form])
+            self.shape_future.rect.x = x_center - SIZE_BLOCK * count_width // 2
+            self.shape_future.rect.y = y_center - SIZE_BLOCK * count_height // 2
+            self.shape_future.draw(0, 0, self.shape_future.image)
+
+        shape_sprites.draw(screen)
 
     def load_button(self):
         image_pause = load_image('pause.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        image_pause2 = load_image('pause2.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_pause.get_width() - 20
         y = 20
-        pause_button = Button((x, y), image_pause, image_pause, buttons_main_sprites, self.set_pause)
+        pause_button = Button((x, y), image_pause, image_pause2, buttons_main_sprites, self.set_pause)
 
         image_home = load_image('home.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_home.get_width() * 2 - 45
         home_image = Button((x, y), image_home, image_home, buttons_main_sprites, self.go_to_home)
         group_buttons.append(GroupButtons([pause_button, home_image]))
+
+    def update_shapes(self, action):
+        if self.shape_now.update_move:
+            self.shape_now.update(action)
+            self.time_update_shape += self.shape_now.v
+            if self.time_update_shape >= 1 and self.shape_now.update_move:
+                self.time_update_shape = 0
+                self.shape_now.update('down')
 
     def set_pause(self):
         ...
@@ -360,17 +423,28 @@ class MainGame:
         ...
 
 
-class Shape:
-    def __init__(self):
+class Shape(pygame.sprite.Sprite):
+    def __init__(self, board):
+        super().__init__(shape_sprites)
+        self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
+        self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
         color_random = random.choice(COLORS)
         self.color1 = pygame.Color(*color_random)
         self.color2 = pygame.Color(*color_random)
         self.color3 = pygame.Color(*color_random)
         self.color4 = pygame.Color(*color_random)
-        self.form = random.randint(1, 7)
-        self.rotate = random.randint(1, 4)
+        self.form = 1
+        self.rotate = 1
         self.color = random.choice(COLORS)
         self.set_color()
+        width_image = len(START_SHAPES[self.form][0]) * SIZE_BLOCK
+        height_image = len(START_SHAPES[self.form]) * SIZE_BLOCK
+        self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
+        self.rect = self.image.get_rect()
+        self.board = board
+        self.coords = []
+        self.v = 0.03
+        self.update_move = True
 
     def set_color(self):
         hsv1 = self.color1.hsva
@@ -382,46 +456,122 @@ class Shape:
         self.color3.hsva = (hsv3[0], hsv3[1], 60, hsv1[3])
         self.color4.hsva = (hsv4[0], hsv3[1], 50, hsv1[3])
 
-    def draw(self, x, y):
-        for i, line in enumerate(TYPES_OF_SHAPES[self.form][self.rotate]):
+    def set_coord_board(self):
+        count_x = len(START_SHAPES[self.form][0]) // 2
+        for i in range(len(START_SHAPES[self.form])):
+            self.coords.append([])
+            for j in range(len(START_SHAPES[self.form][0])):
+                if START_SHAPES[self.form][i][j] != 0:
+                    self.coords[-1].append((j + 5 - count_x, i))
+                self.board.board[i][j + 5 - count_x] += START_SHAPES[self.form][i][j]
+
+    def draw(self, x, y, surface):
+        for i, line in enumerate(START_SHAPES[self.form]):
             for j, cube in enumerate(line):
                 if cube != 0:
-                    self.draw_cube(x + j * SIZE_BLOCK, y + i * SIZE_BLOCK)
+                    self.draw_cube(x + j * SIZE_BLOCK, y + i * SIZE_BLOCK, surface)
 
-    def draw_cube(self, x, y):
-        pygame.draw.rect(screen, self.color2,
+    def draw_cube(self, x, y, surface):
+        pygame.draw.rect(surface, self.color2,
                          pygame.Rect(x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4, SIZE_BLOCK / 2, SIZE_BLOCK / 2))
-        pygame.draw.rect(screen, self.color3,
+        pygame.draw.rect(surface, self.color3,
                          pygame.Rect(x, y + SIZE_BLOCK / 4, SIZE_BLOCK / 4, SIZE_BLOCK / 2))
-        pygame.draw.rect(screen, self.color3,
+        pygame.draw.rect(surface, self.color3,
                          pygame.Rect(x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4, SIZE_BLOCK / 4 + 1, SIZE_BLOCK / 2))
-        pygame.draw.rect(screen, self.color1,
+        pygame.draw.rect(surface, self.color1,
                          pygame.Rect(x + SIZE_BLOCK / 4, y, SIZE_BLOCK / 2, SIZE_BLOCK / 4))
-        pygame.draw.rect(screen, self.color4,
+        pygame.draw.rect(surface, self.color4,
                          pygame.Rect(x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4, SIZE_BLOCK / 2, SIZE_BLOCK / 4 + 1))
 
-        pygame.draw.polygon(screen, self.color3,
+        pygame.draw.polygon(surface, self.color3,
                             ((x, y), (x, y + SIZE_BLOCK / 4), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4)))
-        pygame.draw.polygon(screen, self.color3,
+        pygame.draw.polygon(surface, self.color3,
                             ((x, y + SIZE_BLOCK * 3 / 4), (x, y + SIZE_BLOCK),
                              (x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4)))
-        pygame.draw.polygon(screen, self.color1,
+        pygame.draw.polygon(surface, self.color1,
                             ((x, y), (x + SIZE_BLOCK / 4, y), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4)))
-        pygame.draw.polygon(screen, self.color1,
+        pygame.draw.polygon(surface, self.color1,
                             ((x + SIZE_BLOCK * 3 / 4, y), (x + SIZE_BLOCK, y),
                              (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4)))
-        pygame.draw.polygon(screen, self.color3,
+        pygame.draw.polygon(surface, self.color3,
                             ((x + SIZE_BLOCK, y), (x + SIZE_BLOCK, y + SIZE_BLOCK / 4),
                              (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4)))
-        pygame.draw.polygon(screen, self.color3,
+        pygame.draw.polygon(surface, self.color3,
                             ((x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK * 3 / 4),
                              (x + SIZE_BLOCK, y + SIZE_BLOCK * 3 / 4), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
-        pygame.draw.polygon(screen, self.color4,
+        pygame.draw.polygon(surface, self.color4,
                             ((x, y + SIZE_BLOCK), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4),
                              (x + SIZE_BLOCK / 4, y + SIZE_BLOCK)))
-        pygame.draw.polygon(screen, self.color4,
+        pygame.draw.polygon(surface, self.color4,
                             ((x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK * 3 / 4),
                              (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
+
+    def update(self, action):
+        if action == 'left':
+
+            result = self.check_move_left()
+
+            if result is True:
+                for index, coord_line in enumerate(self.coords):
+                    for index2, coord in enumerate(coord_line):
+                        self.board.board[coord[1]][coord[0]] = 0
+                        self.coords[index][index2] = (coord[0] - 1, coord[1])
+                        self.board.board[coord[1]][coord[0] - 1] = 1
+                self.rect.x -= SIZE_BLOCK
+            elif result is False:
+                self.update_move = False
+
+        elif action == 'right':
+            result = self.check_move_right()
+            if result is True:
+                for index, coord_line in enumerate(self.coords):
+                    for index2, coord in enumerate(coord_line):
+                        self.board.board[coord[1]][coord[0]] = 0
+                        self.coords[index][index2] = (coord[0] + 1, coord[1])
+                        self.board.board[coord[1]][coord[0] + 1] = 1
+                self.rect.x += SIZE_BLOCK
+            elif result is False:
+                self.update_move = False
+
+        elif action == 'down':
+            print(self.board.board)
+            result = self.check_move_down()
+            if result is True:
+                for index, coord_line in enumerate(self.coords):
+                    for index2, coord in enumerate(coord_line):
+                        self.board.board[coord[1]][coord[0]] = 0
+                        self.coords[index][index2] = (coord[0], coord[1] + 1)
+                        self.board.board[coord[1] + 1][coord[0]] = 1
+                self.rect.y += SIZE_BLOCK
+            elif result == 'wall':
+                self.update_move = False
+
+    def check_move_left(self):
+        for coord_line in self.coords:
+            coord = coord_line[0]
+            if coord[0] == 0:
+                return 'wall'
+            if self.board.board[coord[1]][coord[0] - 1]:
+                return False
+        return True
+
+    def check_move_right(self):
+        for coord_line in self.coords:
+            coord = coord_line[-1]
+            if coord[0] == 9:
+                return 'wall'
+            if self.board.board[coord[1]][coord[0] + 1]:
+                return False
+        return True
+
+    def check_move_down(self):
+        for coord in self.coords[-1]:
+            if coord[1] == 19:
+
+                return 'wall'
+            if self.board.board[coord[1] + 1][coord[0]]:
+                return False
+        return True
 
 
 class Board:
@@ -429,85 +579,21 @@ class Board:
     def __init__(self, count_width, count_height, left, top):
         self.width = count_width
         self.height = count_height
-        self.board = None
-        self.count = 0
-        # значения по умолчанию
+        self.board = [[0 for j in range(10)] for i in range(20)]
         self.left = left
         self.top = top
         self.cell_size = SIZE_BLOCK
-
-    # настройка внешнего вида
-    def set_view(self, left, top, cell_size):
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
 
     def render(self):
         x, y = 0, 0
         for i in range(self.height):
             for j in range(self.width):
-                pygame.draw.rect(screen, (181, 178, 5), (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
+                pygame.draw.rect(screen, (181, 178, 5),
+                                 (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
 
                 x += self.cell_size
             y += self.cell_size
             x = 0
-
-    def get_cell(self, mouse_pos):
-        """Возвращает координаты клетки в виде кортежа"""
-        x = mouse_pos[0]
-        y = mouse_pos[1]
-        if (self.left + self.width * self.cell_size >= x >= self.left
-                and self.top + self.height * self.cell_size >= y >= self.top):
-            n_x = (x - self.left) // self.cell_size
-            n_y = (y - self.top) // self.cell_size
-            return n_x, n_y
-        else:
-            return None
-
-    def get_click(self, mouse_pos):
-        """Изменяет поле, опираясь на полученные координаты клетки"""
-        cell = self.get_cell(mouse_pos)
-        self.on_click(cell)
-
-    def on_click(self, cell_coords):
-        """Получает событие нажатия и вызывает первые два метода"""
-        if cell_coords is not None:
-            x, y = cell_coords
-            place = self.board[y][x]
-            flag = False
-            color = None
-            if self.count % 2 == 0 and place == 'red':
-                color = 'red'
-                flag = True
-            elif self.count % 2 != 0 and place == 'blue':
-                color = 'blue'
-                flag = True
-
-            if flag:
-                self.draw_cells(color, x, y)
-                self.count += 1
-
-    def draw_cells(self, color, x_cell, y_cell):
-        for i in range(self.width):
-            x = self.left + i * self.cell_size
-            y = self.top + y_cell * self.cell_size
-
-            pygame.draw.circle(screen, color, (x + self.cell_size / 2, y + self.cell_size / 2),
-                               self.cell_size / 2 - 2)
-            if color == 'red' and self.board[y_cell][i] == 'blue':
-                self.board[y_cell][i] = 'red'
-            elif color == 'blue' and self.board[y_cell][i] == 'red':
-                self.board[y_cell][i] = 'blue'
-        for i in range(self.height):
-            if i != y_cell:
-                x = self.left + x_cell * self.cell_size
-                y = self.top + i * self.cell_size
-                pygame.draw.circle(screen, color, (x + self.cell_size / 2, y + self.cell_size / 2),
-                                   self.cell_size / 2 - 2)
-                if color == 'red' and self.board[i][x_cell] == 'blue':
-                    self.board[i][x_cell] = 'red'
-                elif color == 'blue' and self.board[i][x_cell] == 'red':
-                    self.board[i][x_cell] = 'blue'
 
 
 class Particle(pygame.sprite.Sprite):
@@ -540,7 +626,11 @@ class Button(pygame.sprite.Sprite):
         y = self.rect.y
         w = self.rect.w
         h = self.rect.h
-        if up_click is not None and down_click is not None and (
+        if up_click is not None and down_click is not None and \
+            x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
+                not (x <= up_click[0] <= x + w and y <= up_click[1] <= y + h):
+            self.image = self.prev_image
+        elif up_click is not None and down_click is not None and (
                 x <= down_click[0] <= x + w and
                 y <= down_click[1] <= h + y):
             self.image = self.select_image
@@ -565,6 +655,15 @@ class GroupButtons:
             if result is True:
                 current_button = button
                 break
+            else:
+                ...
+                # flag = False
+                # for b in self.buttons:
+                #     if b.image == b.select_image:
+                #         flag = True
+                #         break
+                # if not flag:
+                #     button.image = button.select_image
         return current_button
 
 
