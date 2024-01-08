@@ -1,6 +1,3 @@
-n = None
-if n:
-    print('fdhdgf')
 
 TYPES_OF_SHAPES = {
     1: {
@@ -46,3 +43,28 @@ TYPES_OF_SHAPES = {
         4: ((0, 1, 0), (1, 1, 0), (1, 0, 0))
     }
 }
+
+
+def check_move_left(self):
+    for coord_line in self.coords:
+        coord = coord_line[0]
+        if coord[0] == 0 or self.board.board[coord[1]][coord[0] - 1]:
+            return False
+    return True
+
+
+def check_move_right(self):
+    for coord_line in self.coords:
+        coord = coord_line[-1]
+        if coord[0] == 9 or self.board.board[coord[1]][coord[0] + 1]:
+            return False
+    return True
+
+
+def check_move_down(self):
+    for coord in self.coords[-1]:
+        if coord[1] == 19 or self.board.board[coord[1] + 1][coord[0]]:
+            return False
+    return True
+
+print(-1 % 4)

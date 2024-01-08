@@ -19,47 +19,57 @@ shape_sprites = pygame.sprite.Group()
 
 TYPES_OF_SHAPES = {
     1: {
-        1: ((0, 0, 0, 0), (0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0)),
-        2: ((0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0)),
-        3: ((0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0), (0, 0, 0, 0)),
-        4: ((0, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 0))
+        0: ((0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0), (0, 0, 0, 0)),
+        1: ((0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0), (0, 0, 1, 0)),
+        2: ((0, 0, 0, 0), (0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0)),
+        3: ((0, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 0))
     },
     2: {
-        1: ((1, 0, 0), (1, 1, 1), (0, 0, 0)),
-        2: ((0, 1, 1), (0, 1, 0), (0, 1, 0)),
-        3: ((0, 0, 0), (1, 1, 1), (0, 0, 1)),
-        4: ((0, 1, 0), (0, 1, 0), (1, 1, 0))
+        0: ((1, 0, 0), (1, 1, 1), (0, 0, 0)),
+        1: ((0, 1, 1), (0, 1, 0), (0, 1, 0)),
+        2: ((0, 0, 0), (1, 1, 1), (0, 0, 1)),
+        3: ((0, 1, 0), (0, 1, 0), (1, 1, 0))
     },
     3: {
-        1: ((0, 0, 1), (1, 1, 1), (0, 0, 0)),
-        2: ((0, 1, 0), (0, 1, 0), (0, 1, 1)),
-        3: ((0, 0, 0), (1, 1, 1), (1, 0, 0)),
-        4: ((1, 1, 0), (0, 1, 0), (0, 1, 0))
+        0: ((0, 0, 1), (1, 1, 1), (0, 0, 0)),
+        1: ((0, 1, 0), (0, 1, 0), (0, 1, 1)),
+        2: ((0, 0, 0), (1, 1, 1), (1, 0, 0)),
+        3: ((1, 1, 0), (0, 1, 0), (0, 1, 0))
     },
     4: {
-        1: ((0, 0), (1, 1), (1, 1), (0, 0)),
-        2: ((0, 0), (1, 1), (1, 1), (0, 0)),
-        3: ((0, 0), (1, 1), (1, 1), (0, 0)),
-        4: ((0, 0), (1, 1), (1, 1), (0, 0))
+        0: ((1, 1), (1, 1)),
+        1: ((1, 1), (1, 1)),
+        2: ((1, 1), (1, 1)),
+        3: ((1, 1), (1, 1))
     },
     5: {
-        1: ((0, 1, 1), (1, 1, 0), (0, 0, 0)),
-        2: ((0, 1, 0), (0, 1, 1), (0, 0, 1)),
-        3: ((0, 0, 0), (0, 1, 1), (1, 1, 0)),
-        4: ((1, 0, 0), (1, 1, 0), (0, 1, 0))
+        0: ((0, 1, 1), (1, 1, 0), (0, 0, 0)),
+        1: ((0, 1, 0), (0, 1, 1), (0, 0, 1)),
+        2: ((0, 0, 0), (0, 1, 1), (1, 1, 0)),
+        3: ((1, 0, 0), (1, 1, 0), (0, 1, 0))
     },
     6: {
-        1: ((0, 1, 0), (1, 1, 1), (0, 0, 0)),
-        2: ((0, 1, 0), (0, 1, 1), (0, 1, 0)),
-        3: ((0, 0, 0), (1, 1, 1), (0, 1, 0)),
-        4: ((0, 1, 0), (1, 1, 0), (0, 1, 0))
+        0: ((0, 1, 0), (1, 1, 1), (0, 0, 0)),
+        1: ((0, 1, 0), (0, 1, 1), (0, 1, 0)),
+        2: ((0, 0, 0), (1, 1, 1), (0, 1, 0)),
+        3: ((0, 1, 0), (1, 1, 0), (0, 1, 0))
     },
     7: {
-        1: ((1, 1, 0), (0, 1, 1), (0, 0, 0)),
-        2: ((0, 0, 1), (0, 1, 1), (0, 1, 0)),
-        3: ((0, 0, 0), (1, 1, 0), (0, 1, 1)),
-        4: ((0, 1, 0), (1, 1, 0), (1, 0, 0))
+        0: ((1, 1, 0), (0, 1, 1), (0, 0, 0)),
+        1: ((0, 0, 1), (0, 1, 1), (0, 1, 0)),
+        2: ((0, 0, 0), (1, 1, 0), (0, 1, 1)),
+        3: ((0, 1, 0), (1, 1, 0), (1, 0, 0))
     }
+}
+
+START_COORDINATES = {
+    1: (3, 0),
+    2: (4, 0),
+    3: (4, 0),
+    4: (4, 0),
+    5: (4, 0),
+    6: (4, 0),
+    7: (4, 0),
 }
 
 COLORS = ((19, 252, 240), (2, 13, 235), (242, 173, 15), (243, 250, 4), (26, 250, 4), (155, 4, 250), (250, 7, 49))
@@ -229,6 +239,8 @@ class Tetris:
     def click_start_button(self):
         self.start_flag = False
         self.main_game = MainGame(self.level)
+        for button in buttons_start_sprites:
+            button.be = False
 
     def click_level(self, name_level):
         self.level = name_level
@@ -343,6 +355,7 @@ class MainGame:
         self.shape_future = None
         self.update_shape = True
         self.level = level
+        self.activity = True
         self.time_update_shape = 0
         self.load_button()
 
@@ -382,17 +395,19 @@ class MainGame:
             self.shape_future = Shape(self.board)
 
             count_x = len(START_SHAPES[self.shape_now.form][0]) // 2
-            self.shape_now.rect.x = SIZE_SCREEN[0] // 2 - count_x * SIZE_BLOCK
+
+            self.shape_now.rect.x = self.left + SIZE_BLOCK * START_COORDINATES[self.shape_now.form][0]
             self.shape_now.rect.y = self.top
             self.shape_now.set_coord_board()
+            self.shape_now.set_coord_cube_board()
 
-            self.shape_now.draw(0, 0, self.shape_now.image)
+            self.shape_now.draw_start(0, 0, self.shape_now.image)
 
             count_width = len(START_SHAPES[self.shape_future.form][0])
             count_height = len(START_SHAPES[self.shape_future.form])
             self.shape_future.rect.x = x_center - SIZE_BLOCK * count_width // 2
             self.shape_future.rect.y = y_center - SIZE_BLOCK * count_height // 2
-            self.shape_future.draw(0, 0, self.shape_future.image)
+            self.shape_future.draw_start(0, 0, self.shape_future.image)
 
         shape_sprites.draw(screen)
 
@@ -409,15 +424,21 @@ class MainGame:
         group_buttons.append(GroupButtons([pause_button, home_image]))
 
     def update_shapes(self, action):
-        if self.shape_now.update_move:
-            self.shape_now.update(action)
-            self.time_update_shape += self.shape_now.v
-            if self.time_update_shape >= 1 and self.shape_now.update_move:
-                self.time_update_shape = 0
-                self.shape_now.update('down')
+        if self.activity:
+            if self.shape_now.update_move:
+                self.shape_now.update(action)
+                self.time_update_shape += self.shape_now.v
+                if self.time_update_shape >= 1 and self.shape_now.update_move:
+                    self.time_update_shape = 0
+                    self.shape_now.update('down')
+            else:
+                self.update_shape = True
 
     def set_pause(self):
-        ...
+        if self.activity:
+            self.activity = False
+        else:
+            self.activity = True
 
     def go_to_home(self):
         ...
@@ -433,17 +454,19 @@ class Shape(pygame.sprite.Sprite):
         self.color2 = pygame.Color(*color_random)
         self.color3 = pygame.Color(*color_random)
         self.color4 = pygame.Color(*color_random)
-        self.form = 1
-        self.rotate = 1
+        self.form = random.randint(1, 7)
+        self.rotate = 0
         self.color = random.choice(COLORS)
         self.set_color()
-        width_image = len(START_SHAPES[self.form][0]) * SIZE_BLOCK
-        height_image = len(START_SHAPES[self.form]) * SIZE_BLOCK
+        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * SIZE_BLOCK
+        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * SIZE_BLOCK
         self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
         self.rect = self.image.get_rect()
         self.board = board
         self.coords = []
-        self.v = 0.03
+        self.cube_coords = []
+        self.index_coords = []
+        self.v = 0.02
         self.update_move = True
 
     def set_color(self):
@@ -457,19 +480,50 @@ class Shape(pygame.sprite.Sprite):
         self.color4.hsva = (hsv4[0], hsv3[1], 50, hsv1[3])
 
     def set_coord_board(self):
-        count_x = len(START_SHAPES[self.form][0]) // 2
+        self.coords = []
+        start_x = START_COORDINATES[self.form][0]
         for i in range(len(START_SHAPES[self.form])):
             self.coords.append([])
             for j in range(len(START_SHAPES[self.form][0])):
                 if START_SHAPES[self.form][i][j] != 0:
-                    self.coords[-1].append((j + 5 - count_x, i))
-                self.board.board[i][j + 5 - count_x] += START_SHAPES[self.form][i][j]
+                    self.coords[-1].append([start_x + j, i])
+                self.board.board[i][start_x + j] += START_SHAPES[self.form][i][j]
+
+    def set_coord_cube_board(self):
+        self.cube_coords = []
+        start_x = START_COORDINATES[self.form][0]
+        for i in range(len(TYPES_OF_SHAPES[self.form][self.rotate])):
+            self.cube_coords.append([])
+            for j in range(len(TYPES_OF_SHAPES[self.form][self.rotate][0])):
+                self.cube_coords[-1].append([start_x + j, i])
+
+        for index, coord_line in enumerate(self.cube_coords):
+            for index2, coord in enumerate(coord_line):
+                if coord in [j for i in self.coords for j in i]:
+                    self.index_coords.append([index, index2])
 
     def draw(self, x, y, surface):
-        for i, line in enumerate(START_SHAPES[self.form]):
+        i = 0
+        n = len(TYPES_OF_SHAPES[self.form][self.rotate])
+        while i < n:
+            line = TYPES_OF_SHAPES[self.form][self.rotate][i]
             for j, cube in enumerate(line):
                 if cube != 0:
                     self.draw_cube(x + j * SIZE_BLOCK, y + i * SIZE_BLOCK, surface)
+            i += 1
+
+    def draw_start(self, x, y, surface):
+        i = 0
+        count_y = 0
+        n = len(TYPES_OF_SHAPES[self.form][self.rotate])
+        while i < n:
+            line = TYPES_OF_SHAPES[self.form][self.rotate][i]
+            if sum(line) != 0:
+                for j, cube in enumerate(line):
+                    if cube != 0:
+                        self.draw_cube(x + j * SIZE_BLOCK, y + count_y * SIZE_BLOCK, surface)
+                count_y += 1
+            i += 1
 
     def draw_cube(self, x, y, surface):
         pygame.draw.rect(surface, self.color2,
@@ -507,71 +561,129 @@ class Shape(pygame.sprite.Sprite):
                              (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
 
     def update(self, action):
+
         if action == 'left':
-
             result = self.check_move_left()
-
             if result is True:
                 for index, coord_line in enumerate(self.coords):
                     for index2, coord in enumerate(coord_line):
                         self.board.board[coord[1]][coord[0]] = 0
-                        self.coords[index][index2] = (coord[0] - 1, coord[1])
+                        self.coords[index][index2] = [coord[0] - 1, coord[1]]
                         self.board.board[coord[1]][coord[0] - 1] = 1
+
+                for index, coord_line in enumerate(self.cube_coords):
+                    for index2, coord in enumerate(coord_line):
+                        self.cube_coords[index][index2][0] -= 1
+
                 self.rect.x -= SIZE_BLOCK
-            elif result is False:
-                self.update_move = False
 
         elif action == 'right':
             result = self.check_move_right()
             if result is True:
                 for index, coord_line in enumerate(self.coords):
-                    for index2, coord in enumerate(coord_line):
+                    for index2, coord in enumerate(coord_line[::-1]):
+                        index2 = len(coord_line) - index2 - 1
                         self.board.board[coord[1]][coord[0]] = 0
-                        self.coords[index][index2] = (coord[0] + 1, coord[1])
+                        self.coords[index][index2] = [coord[0] + 1, coord[1]]
                         self.board.board[coord[1]][coord[0] + 1] = 1
+
+                for index, coord_line in enumerate(self.cube_coords):
+                    for index2, coord in enumerate(coord_line):
+                        self.cube_coords[index][index2][0] += 1
+
                 self.rect.x += SIZE_BLOCK
-            elif result is False:
-                self.update_move = False
 
         elif action == 'down':
-            print(self.board.board)
             result = self.check_move_down()
             if result is True:
-                for index, coord_line in enumerate(self.coords):
+
+                for index, coord_line in enumerate(self.coords[::-1]):
+                    index = len(self.coords) - index - 1
                     for index2, coord in enumerate(coord_line):
                         self.board.board[coord[1]][coord[0]] = 0
-                        self.coords[index][index2] = (coord[0], coord[1] + 1)
+                        self.coords[index][index2] = [coord[0], coord[1] + 1]
                         self.board.board[coord[1] + 1][coord[0]] = 1
+
+                for index, coord_line in enumerate(self.cube_coords):
+                    for index2, coord in enumerate(coord_line):
+                        self.cube_coords[index][index2][1] += 1
+
                 self.rect.y += SIZE_BLOCK
-            elif result == 'wall':
+            else:
                 self.update_move = False
 
+        elif action == 'rotate':
+            self.rotate_shape()
+
     def check_move_left(self):
+
         for coord_line in self.coords:
             coord = coord_line[0]
-            if coord[0] == 0:
-                return 'wall'
-            if self.board.board[coord[1]][coord[0] - 1]:
+            if coord[0] == 0 or self.board.board[coord[1]][coord[0] - 1]:
                 return False
         return True
 
     def check_move_right(self):
         for coord_line in self.coords:
             coord = coord_line[-1]
-            if coord[0] == 9:
-                return 'wall'
-            if self.board.board[coord[1]][coord[0] + 1]:
+            if coord[0] == 9 or self.board.board[coord[1]][coord[0] + 1]:
                 return False
         return True
 
     def check_move_down(self):
-        for coord in self.coords[-1]:
-            if coord[1] == 19:
-
-                return 'wall'
-            if self.board.board[coord[1] + 1][coord[0]]:
-                return False
+        print('down', self.coords)
+        for coord_line in self.coords:
+            for coord in coord_line:
+                if coord[1] == 19 or (self.board.board[coord[1] + 1][coord[0]] and [coord[0], coord[1] + 1] not in [j for i in self.coords for j in i]):
+                    print('\n')
+                    return False
         return True
+
+    def rotate_shape(self):
+        self.rotate = (self.rotate + 1) % 4
+        new_coords = []
+        i = 0
+        index = 0
+        n = len(TYPES_OF_SHAPES[self.form][self.rotate])
+
+        while i < n:
+            coord_line = TYPES_OF_SHAPES[self.form][self.rotate][index]
+            if sum(coord_line) != 0:
+                new_coords.append([])
+                index2 = 0
+
+                n2 = len(coord_line)
+                while index2 < n2:
+                    coord = coord_line[index2]
+                    if coord == 1:
+                        new_coords[-1].append(self.cube_coords[index][index2])
+                    index2 += 1
+            index += 1
+            i += 1
+
+        for index, coord_line in enumerate(new_coords):
+            for index2, coord in enumerate(coord_line):
+                if coord[1] > 19 or coord[1] < 0 or coord[0] < 0 or coord[0] > 9:
+                    self.rotate = (self.rotate - 1) % 4
+                    return
+                elif coord not in [j for i in self.coords for j in i] and self.board.board[coord[1]][coord[0]] == 1:
+                    self.rotate = (self.rotate - 1) % 4
+                    return
+        for index, coord_line in enumerate(self.coords):
+            for index2, coord in enumerate(coord_line):
+                self.board.board[coord[1]][coord[0]] = 0
+
+        for index, coord_line in enumerate(new_coords):
+            for index2, coord in enumerate(coord_line):
+                self.board.board[coord[1]][coord[0]] = 1
+
+        self.coords = new_coords
+
+        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * SIZE_BLOCK
+        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * SIZE_BLOCK
+        self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
+        self.draw(0, 0, self.image)
+        print(self.coords)
 
 
 class Board:
@@ -615,6 +727,7 @@ class Particle(pygame.sprite.Sprite):
 class Button(pygame.sprite.Sprite):
     def __init__(self, coord, prev_image, select_image, group_sprites, action=None):
         super().__init__(group_sprites)
+        self.be = True
         self.action = action
         self.prev_image = prev_image
         self.select_image = select_image
@@ -626,22 +739,23 @@ class Button(pygame.sprite.Sprite):
         y = self.rect.y
         w = self.rect.w
         h = self.rect.h
-        if up_click is not None and down_click is not None and \
-            x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
-                not (x <= up_click[0] <= x + w and y <= up_click[1] <= y + h):
-            self.image = self.prev_image
-        elif up_click is not None and down_click is not None and (
-                x <= down_click[0] <= x + w and
-                y <= down_click[1] <= h + y):
-            self.image = self.select_image
-            if self.action is not None:
-                self.action()
-            return True
+        if self.be:
+            if up_click is not None and down_click is not None and \
+                x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
+                    not (x <= up_click[0] <= x + w and y <= up_click[1] <= y + h):
+                self.image = self.prev_image
+            elif up_click is not None and down_click is not None and (
+                    x <= down_click[0] <= x + w and
+                    y <= down_click[1] <= h + y):
+                self.image = self.select_image
+                if self.action is not None:
+                    self.action()
+                return True
 
-        elif down_click is not None and \
-                x <= down_click[0] <= x + w and \
-                y <= down_click[1] <= h + y:
-            self.image = self.select_image
+            elif down_click is not None and \
+                    x <= down_click[0] <= x + w and \
+                    y <= down_click[1] <= h + y:
+                self.image = self.select_image
 
 
 class GroupButtons:
