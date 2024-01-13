@@ -95,19 +95,23 @@ def draw_cube(x, y, surface, colors):
 
 class Tetris:
     """Главный класс игры"""
+
     def __init__(self):
+        self.start_buttons = dict()
         self.main_game = None
         self.coords_letters = None
         self.time_draw_particle = 0
         self.new_shape = True
         self.time_key_pressed = 0
+        self.sleep_key_pressed = None
         self.start_flag = True
-        self.up_button, self.right_button, self.down_button = None, None, None
         self.image_block = None
         self.down_click = None
         self.up_click = None
         self.level = 'easy'
         self.action = None
+        self.language = 'рус'
+        self.sound = 'on'
 
     def start_game(self):
         """Начало игры"""
@@ -137,7 +141,7 @@ class Tetris:
                         self.new_shape = True
                         self.time_key_pressed = 0
 
-            if self.action is None and self.new_shape:
+            if self.action is None and self.new_shape and not self.start_flag:
                 if self.time_key_pressed >= 1:
                     if keys[pygame.K_LEFT]:
                         self.action = 'left'
@@ -146,7 +150,7 @@ class Tetris:
                     elif keys[pygame.K_DOWN]:
                         self.action = 'down'
                     self.time_key_pressed = 0
-                self.time_key_pressed += 0.2
+                self.time_key_pressed += self.sleep_key_pressed
 
             screen.blit(screen_image, (0, 0))
             self.draw_game(self.action)
@@ -172,17 +176,31 @@ class Tetris:
             self.action = 'down'
 
         elif event.key == pygame.K_ESCAPE:
-            if self.main_game is not None and not self.main_game.open_home:
-                self.main_game.pause_button.image = self.main_game.pause_button.select_image
+            if (self.main_game is not None and not self.main_game.open_home and
+                    self.main_game.main_game_buttons['pause_button'].be):
+                self.main_game.main_game_buttons['pause_button'].image = (
+                    self.main_game.main_game_buttons['pause_button'].click_image)
                 self.main_game.set_pause()
 
         elif event.key == pygame.K_q:
             if self.main_game is not None and self.main_game.open_home:
-                self.start_flag = True
-                for button in buttons_start_sprites:
-                    button.be = True
-                for button in buttons_main_sprites:
-                    button.be = False
+                self.return_home()
+
+        elif event.key == pygame.K_RETURN:
+            if self.main_game is not None and self.main_game.finish:
+                self.return_home()
+
+    def return_home(self):
+        shape_sprites.empty()
+        buttons_main_sprites.empty()
+        self.start_flag = True
+        for index, group in enumerate(group_buttons):
+            if self.main_game.main_game_buttons['pause_button'] in group.buttons:
+                del group_buttons[index]
+                break
+        for button in buttons_start_sprites:
+            button.be = True
+        self.main_game = None
 
     def load_data(self):
         global SIZE_BLOCK, image_block
@@ -206,22 +224,34 @@ class Tetris:
         start_image_1 = load_image('start4.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
         start_image_2 = load_image('start3.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
         start_button = Button((SIZE_SCREEN[0] // 2 - 2.5 * SIZE_BLOCK,
-                               SIZE_SCREEN[1] // 2 + SIZE_BLOCK * 6), start_image_1, start_image_2,
+                               SIZE_SCREEN[1] // 2 + SIZE_BLOCK * 6), start_image_1, start_image_2, start_image_1,
                               buttons_start_sprites,
                               self.click_start_button)
-        self.up_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 4),
-                                load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
-                                load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), buttons_start_sprites)
-        Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2),
-               load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
-               load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), buttons_start_sprites)
-        self.right_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 2, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2),
-                                   load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
-                                   load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
-                                   buttons_start_sprites)
-        self.down_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 + SIZE_BLOCK // 10),
-                                  load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
-                                  load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)), buttons_start_sprites)
+        self.start_buttons['start_button'] = start_button
+        up_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 4),
+                           load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                           load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                           load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                           buttons_start_sprites)
+        left_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2),
+                             load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                             load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                             load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                             buttons_start_sprites)
+        right_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 2, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2),
+                              load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                              load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                              load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                              buttons_start_sprites)
+        down_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 + SIZE_BLOCK // 10),
+                             load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                             load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                             load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
+                             buttons_start_sprites)
+        self.start_buttons['up_button'] = up_button
+        self.start_buttons['left_button'] = left_button
+        self.start_buttons['right_button'] = right_button
+        self.start_buttons['down_button'] = down_button
 
         easy_img = load_image(f'easy.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5), )
         normal_img = load_image(f'normal.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
@@ -229,25 +259,79 @@ class Tetris:
         easy_img2 = load_image(f'easy2.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
         normal_img2 = load_image(f'normal2.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
         hard_img2 = load_image(f'hard2.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        easy = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5, SIZE_BLOCK * 16), easy_img, easy_img2,
+        easy = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5, SIZE_BLOCK * 16), easy_img, easy_img2, easy_img2,
                       buttons_start_sprites,
                       lambda: self.click_level('easy'))
-        easy.image = easy.select_image
-        normal = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8, SIZE_BLOCK * 16), normal_img, normal_img2,
-                        buttons_start_sprites,
-                        lambda: self.click_level('normal'))
-        hard = Button((SIZE_SCREEN[0] // 2 + SIZE_BLOCK * 1.5, SIZE_BLOCK * 16), hard_img, hard_img2,
+        easy.image = easy.click_image
+        normal = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8, SIZE_BLOCK * 16),
+                        normal_img, normal_img2, normal_img2, buttons_start_sprites, lambda: self.click_level('normal'))
+        hard = Button((SIZE_SCREEN[0] // 2 + SIZE_BLOCK * 1.5, SIZE_BLOCK * 16), hard_img, hard_img2, hard_img2,
                       buttons_start_sprites,
                       lambda: self.click_level('hard'))
+        self.start_buttons['easy_button'] = easy
+        self.start_buttons['normal_button'] = normal
+        self.start_buttons['hard_button'] = hard
+
+        language_image_russian = load_image('russian.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        language_image_english = load_image('english.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        sound_image = load_image('sound.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        not_sound_image = load_image('not_sound.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+
+        english_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
+                                language_image_english, language_image_english, language_image_russian,
+                                buttons_start_sprites, lambda: self.set_language('рус'))
+        russian_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
+                                language_image_russian, language_image_russian, language_image_english,
+                                buttons_start_sprites, lambda: self.set_language('eng'))
+
+        not_sound_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
+                                  not_sound_image, not_sound_image, sound_image, buttons_start_sprites,
+                                  lambda: self.set_sound('on'))
+        sound_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
+                              sound_image, sound_image, not_sound_image, buttons_start_sprites,
+                              lambda: self.set_sound('off'))
+        self.start_buttons['russian_button'] = russian_button
+        self.start_buttons['english_button'] = english_button
+        self.start_buttons['sound_button'] = sound_button
+        self.start_buttons['not_sound_button'] = not_sound_button
+
+        group_buttons.append(GroupButtons([russian_button, english_button]))
+        group_buttons.append(GroupButtons([sound_button, not_sound_button]))
 
         group_buttons.append(GroupButtons([easy, normal, hard]))
         group_buttons.append(GroupButtons([start_button]))
+
+    def set_language(self, language):
+        self.language = language
+        if self.language == 'eng':
+            self.start_buttons['russian_button'].be = False
+            self.start_buttons['english_button'].be = True
+
+        else:
+            self.start_buttons['english_button'].be = False
+            self.start_buttons['russian_button'].be = True
+
+    def set_sound(self, action):
+        self.sound = action
+        if self.sound == 'off':
+            self.start_buttons['sound_button'].be = False
+            self.start_buttons['not_sound_button'].be = True
+
+        else:
+            self.start_buttons['sound_button'].be = True
+            self.start_buttons['not_sound_button'].be = False
 
     def click_start_button(self):
         self.start_flag = False
         self.main_game = MainGame(self.level, self)
         for button in buttons_start_sprites:
             button.be = False
+        if self.level == 'easy':
+            self.sleep_key_pressed = 0.2
+        elif self.level == 'normal':
+            self.sleep_key_pressed = 0.3
+        else:
+            self.sleep_key_pressed = 0.4
 
     def click_level(self, name_level):
         self.level = name_level
@@ -334,25 +418,29 @@ class Tetris:
         size = int(SIZE_SCREEN[0] / SIZE_BLOCK / 2.1)
         font = pygame.font.Font(None, size)
         text = font.render("Поворот против часовой стрелки", True, (226, 235, 231))
-        text_x = self.up_button.rect.x + self.up_button.rect.w
-        text_y = self.up_button.rect.y + self.up_button.rect.h // 2
+        up_button = self.start_buttons['up_button']
+        right_button = self.start_buttons['right_button']
+        down_button = self.start_buttons['down_button']
+
+        text_x = up_button.rect.x + up_button.rect.w
+        text_y = up_button.rect.y + up_button.rect.h // 2
         screen.blit(text, (text_x, text_y))
 
         text2 = font.render("Смещение фигуры", True, (226, 235, 231))
-        text_x2 = self.right_button.rect.x + self.right_button.rect.w
-        text_y2 = self.right_button.rect.y + self.right_button.rect.h // 2
+        text_x2 = right_button.rect.x + right_button.rect.w
+        text_y2 = right_button.rect.y + right_button.rect.h // 2
         screen.blit(text2, (text_x2, text_y2))
 
         text3 = font.render("Ускорение фигуры вниз", True, (226, 235, 231))
-        text_x3 = self.down_button.rect.x + self.down_button.rect.w
-        text_y3 = self.down_button.rect.y + self.down_button.rect.h // 2
+        text_x3 = down_button.rect.x + down_button.rect.w
+        text_y3 = down_button.rect.y + down_button.rect.h // 2
         screen.blit(text3, (text_x3, text_y3))
 
 
 class MainGame:
     def __init__(self, level, parent=None):
+        self.main_game_buttons = dict()
         self.open_home = None
-        self.pause_button = None
         self.parent = parent
         self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
         self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
@@ -361,12 +449,18 @@ class MainGame:
         self.shape_now = None
         self.shape_future = None
         self.update_shape = True
-        self.level = level
         self.activity = True
         self.time_update_shape = 0
         self.start_game = True
         self.count_lines = 0
-        self.count_levels = 1
+        self.count_levels = 0
+        self.finish = False
+        if level == 'easy':
+            self.v_level = 0.02
+        elif level == 'normal':
+            self.v_level = 0.03
+        else:
+            self.v_level = 0.04
         # Цвета фигур после падения
         self.color1 = pygame.Color((212, 211, 201))
         self.color2 = pygame.Color((212, 211, 201))
@@ -400,14 +494,16 @@ class MainGame:
                 self.shape_now.kill()
                 self.shape_now = self.shape_future
             else:
-                self.shape_now = Shape(self)
-
-            self.shape_future = Shape(self)
+                self.shape_now = Shape(self.count_levels, self)
+            self.shape_future = Shape(self.count_levels, self)
 
             self.shape_now.rect.x = self.left + SIZE_BLOCK * START_COORDINATES[self.shape_now.form][0]
             self.shape_now.rect.y = self.top
             self.shape_now.set_coord_board()
             self.shape_now.set_coord_cube_board()
+            result = self.check_continuation_game()
+            if not result:
+                self.finish = True
 
             self.shape_now.draw_start(0, 0, self.shape_now.image)
 
@@ -427,14 +523,50 @@ class MainGame:
 
         shape_sprites.draw(screen)
         self.draw_fall_shapes()
+        if self.finish:
+            self.finish_game()
+            self.main_game_buttons['pause_button'].be = False
+            self.main_game_buttons['home_button'].be = False
+
         if self.open_home:
             self.draw_information_home()
         elif not self.activity:
             self.draw_information_pause()
 
+    def finish_game(self):
+        font = pygame.font.Font(None, 35)
+        text_lines = ["Вы проиграли.", "Нажмите на Enter,", "чтобы выйти"]
+        rendered_lines = [font.render(line, True, (0, 0, 0)) for line in text_lines]
+        text_w1 = rendered_lines[0].get_width()
+        text_w2 = rendered_lines[1].get_width()
+        text_w3 = rendered_lines[1].get_width()
+        text_h1 = rendered_lines[0].get_height()
+        text_h2 = rendered_lines[1].get_height()
+        text_h3 = rendered_lines[1].get_height()
+        text_x1 = SIZE_SCREEN[0] // 2 - text_w1 // 2
+        text_x2 = SIZE_SCREEN[0] // 2 - text_w2 // 2
+        text_x3 = SIZE_SCREEN[0] // 2 - text_w3 // 2
+        text_y1 = SIZE_SCREEN[1] // 2 - text_h1 // 2
+        text_y2 = text_y1 + text_h1
+        text_y3 = text_y2 + text_h2
+        background = pygame.Surface([max(text_w1, text_w2, text_w3) + 20, text_h1 + text_h2 + text_h3 + 20])
+        background.fill((255, 255, 255))
+        background.set_alpha(170)
+        screen.blit(background, (min(text_x1, text_x2, text_x3) - 10, text_y1 - 10))
+        screen.blit(rendered_lines[0], (text_x1, text_y1))
+        screen.blit(rendered_lines[1], (text_x2, text_y2))
+        screen.blit(rendered_lines[2], (text_x3, text_y3))
+
+    def check_continuation_game(self):
+        for coord_line in self.board.board:
+            for coord in coord_line:
+                if coord == 2:
+                    return False
+        return True
+
     def draw_information_home(self):
         font = pygame.font.Font(None, 35)
-        text_lines = ["Чтобы вернуться домой,",  "нажмите на кнопку Q"]
+        text_lines = ["Чтобы вернуться домой,", "нажмите на кнопку Q"]
         rendered_lines = [font.render(line, True, (0, 0, 0)) for line in text_lines]
         text_w21 = rendered_lines[0].get_width()
         text_w22 = rendered_lines[1].get_width()
@@ -548,19 +680,21 @@ class MainGame:
         image_pause2 = load_image('pause2.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_pause.get_width() - 20
         y = 20
-        self.pause_button = Button((x, y), image_pause, image_pause2, buttons_main_sprites, self.set_pause)
+        pause_button = Button((x, y), image_pause, image_pause, image_pause2, buttons_main_sprites, self.set_pause)
 
         image_home = load_image('home.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_home.get_width() * 2 - 45
-        home_image = Button((x, y), image_home, image_home, buttons_main_sprites, self.go_to_home)
-        group_buttons.append(GroupButtons([self.pause_button, home_image]))
+        home_button = Button((x, y), image_home, image_home, image_home, buttons_main_sprites, self.go_to_home)
+        self.main_game_buttons['pause_button'] = pause_button
+        self.main_game_buttons['home_button'] = home_button
+        group_buttons.append(GroupButtons([pause_button, home_button]))
 
     def update_shapes(self, action):
-        if self.activity and not self.open_home:
+        if self.activity and not self.open_home and not self.finish:
             if self.shape_now.update_move:
                 self.shape_now.move(action)
-                self.time_update_shape += self.shape_now.v
-                if self.time_update_shape >= 1 and self.shape_now.update_move:
+                self.time_update_shape += self.v_level
+                if self.time_update_shape >= self.shape_now.v and self.shape_now.update_move:
                     self.time_update_shape = 0
                     self.shape_now.move('down')
 
@@ -576,6 +710,9 @@ class MainGame:
                     list_indexes.append(index)
 
             if list_indexes:
+                self.scoring_points(len(list_indexes))
+                self.scoring_levels(len(list_indexes))
+
                 for index in list_indexes:
                     self.board.board[index] = [i - i for i in range(10)]
 
@@ -591,12 +728,29 @@ class MainGame:
             else:
                 break
 
+    def scoring_points(self, count_lines):
+        if count_lines == 1:
+            self.points += 40 * (self.count_levels + 1)
+        elif count_lines == 2:
+            self.points += 100 * (self.count_levels + 1)
+        elif count_lines == 3:
+            self.points += 300 * (self.count_levels + 1)
+        elif count_lines == 4:
+            self.points += 1200 * (self.count_levels + 1)
+
+    def scoring_levels(self, count_new_levels):
+        for i in range(count_new_levels):
+            self.count_lines += 1
+            if self.count_lines % 10 == 0:
+                self.count_levels += 1
+
     def set_pause(self):
         if self.activity:
             self.activity = False
+
         else:
             self.activity = True
-            self.pause_button.image = self.pause_button.prev_image
+            self.main_game_buttons['pause_button'].image = self.main_game_buttons['pause_button'].prev_image
 
     def go_to_home(self):
         if self.open_home:
@@ -607,7 +761,7 @@ class MainGame:
 
 
 class Shape(pygame.sprite.Sprite):
-    def __init__(self, parent=None):
+    def __init__(self, level, parent=None):
         super().__init__(shape_sprites)
         self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
         self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
@@ -628,7 +782,7 @@ class Shape(pygame.sprite.Sprite):
         self.cube_coords = []
         # После вставки в поле
         self.coordinates = None
-        self.v = 0.02
+        self.v = (0.8 - (level * 0.007)) ** level
         self.update_move = True
         self.parent = parent
 
@@ -837,12 +991,13 @@ class Particle(pygame.sprite.Sprite):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, coord, prev_image, select_image, group_sprites, action=None):
+    def __init__(self, coord, prev_image, current_image, click_image, group_sprites, action=None):
         super().__init__(group_sprites)
         self.be = True
         self.action = action
         self.prev_image = prev_image
-        self.select_image = select_image
+        self.current_image = current_image
+        self.click_image = click_image
         self.image = prev_image
         self.rect = pygame.Rect(coord[0], coord[1], self.image.get_width(), self.image.get_height())
 
@@ -853,13 +1008,13 @@ class Button(pygame.sprite.Sprite):
         h = self.rect.h
         if self.be:
             if up_click is not None and down_click is not None and \
-                x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
+                    x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
                     not (x <= up_click[0] <= x + w and y <= up_click[1] <= y + h):
                 self.image = self.prev_image
             elif up_click is not None and down_click is not None and (
                     x <= down_click[0] <= x + w and
                     y <= down_click[1] <= h + y):
-                self.image = self.select_image
+                self.image = self.click_image
                 if self.action is not None:
                     self.action()
                 return True
@@ -867,7 +1022,7 @@ class Button(pygame.sprite.Sprite):
             elif down_click is not None and \
                     x <= down_click[0] <= x + w and \
                     y <= down_click[1] <= h + y:
-                self.image = self.select_image
+                self.image = self.current_image
 
 
 class GroupButtons:
@@ -894,7 +1049,6 @@ class GroupButtons:
 
 
 if __name__ == '__main__':
-
     pygame.display.set_caption('Тетрис')
     fullname = os.path.join('../data', 'icon.png')
     image_icon = pygame.image.load(fullname)
