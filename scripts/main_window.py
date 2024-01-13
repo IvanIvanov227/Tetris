@@ -5,7 +5,7 @@ import sys
 import pygame
 import random
 
-from constants import TYPES_OF_SHAPES, START_SHAPES, START_COORDINATES, COLORS
+from constants import TYPES_OF_SHAPES, START_SHAPES, START_COORDINATES, COLORS, PHRASES
 
 pygame.init()
 screensize = pygame.display.list_modes()
@@ -110,7 +110,7 @@ class Tetris:
         self.up_click = None
         self.level = 'easy'
         self.action = None
-        self.language = 'рус'
+        self.language = 'ru'
         self.sound = 'on'
 
     def start_game(self):
@@ -279,7 +279,7 @@ class Tetris:
 
         english_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
                                 language_image_english, language_image_english, language_image_russian,
-                                buttons_start_sprites, lambda: self.set_language('рус'))
+                                buttons_start_sprites, lambda: self.set_language('ru'))
         russian_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
                                 language_image_russian, language_image_russian, language_image_english,
                                 buttons_start_sprites, lambda: self.set_language('eng'))
@@ -417,7 +417,7 @@ class Tetris:
     def draw_instruction(self):
         size = int(SIZE_SCREEN[0] / SIZE_BLOCK / 2.1)
         font = pygame.font.Font(None, size)
-        text = font.render("Поворот против часовой стрелки", True, (226, 235, 231))
+        text = font.render(PHRASES[self.language]['information_rotate'], True, (226, 235, 231))
         up_button = self.start_buttons['up_button']
         right_button = self.start_buttons['right_button']
         down_button = self.start_buttons['down_button']
@@ -426,13 +426,14 @@ class Tetris:
         text_y = up_button.rect.y + up_button.rect.h // 2
         screen.blit(text, (text_x, text_y))
 
-        text2 = font.render("Смещение фигуры", True, (226, 235, 231))
+        text2 = font.render(PHRASES[self.language]['information_shift_shape'], True, (226, 235, 231))
         text_x2 = right_button.rect.x + right_button.rect.w
         text_y2 = right_button.rect.y + right_button.rect.h // 2
         screen.blit(text2, (text_x2, text_y2))
 
-        text3 = font.render("Ускорение фигуры вниз", True, (226, 235, 231))
+        text3 = font.render(PHRASES[self.language]['accelerating_down_shape'], True, (226, 235, 231))
         text_x3 = down_button.rect.x + down_button.rect.w
+
         text_y3 = down_button.rect.y + down_button.rect.h // 2
         screen.blit(text3, (text_x3, text_y3))
 
