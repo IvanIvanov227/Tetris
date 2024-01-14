@@ -91,7 +91,11 @@ PHRASES = {
         'pause': 'Пауза',
         'pause_information': ["Чтобы продолжить, нажмите на кнопку", "или нажмите Escape"],
         'home_information': ["Чтобы вернуться домой,", "нажмите на кнопку Q"],
-        'finish_information': ["Вы проиграли.", "Нажмите на Enter,", "чтобы выйти"]
+        'finish_information': ["Вы проиграли.", "Нажмите на Enter,", "чтобы выйти"],
+        'complexity_easy': 'Легко',
+        'complexity_normal': 'Нормально',
+        'complexity_hard': 'Трудно',
+        'complexity': 'Сложность'
     },
     'eng': {
         'information_rotate': 'Clockwise rotation',
@@ -112,7 +116,11 @@ PHRASES = {
         'pause': 'Pause',
         'pause_information': ["To continue, click on the button", "or press Escape"],
         'home_information': ["To return home,", "click on the Q button"],
-        'finish_information': ["You've lost.", "Press Enter,", "to get out"]
+        'finish_information': ["You've lost.", "Press Enter,", "to get out"],
+        'complexity_easy': 'Easy',
+        'complexity_normal': 'Normal',
+        'complexity_hard': 'Hard',
+        'complexity': 'Complexity'
     }
 
 }

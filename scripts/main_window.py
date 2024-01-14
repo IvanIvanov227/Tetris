@@ -8,12 +8,15 @@ import random
 from constants import TYPES_OF_SHAPES, START_SHAPES, START_COORDINATES, COLORS, PHRASES
 
 pygame.init()
+pygame.mixer.init()
 screensize = pygame.display.list_modes()
-SIZE_SCREEN = width, height = screensize[6][0], screensize[6][1]
-screen = pygame.display.set_mode(SIZE_SCREEN)
+SIZE_SCREEN = width, height = screensize[10][0], screensize[10][1]
+screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
 FPS = 60
 SIZE_BLOCK = 0
 image_block = None
+LANGUAGE = 'ru'
+SOUND = 'on'
 group_buttons = []
 particle_sprites = pygame.sprite.Group()
 buttons_start_sprites = pygame.sprite.Group()
@@ -27,7 +30,7 @@ def terminate():
 
 
 def load_image(name, colorkey=None, size=None):
-    full_name = os.path.join('../data', name)
+    full_name = os.path.join('../data/images/', name)
     if not os.path.isfile(full_name):
         print(f"Файл с изображением '{full_name}' не найден")
         sys.exit()
@@ -97,6 +100,7 @@ class Tetris:
     """Главный класс игры"""
 
     def __init__(self):
+        self.sound_main = None
         self.start_buttons = dict()
         self.main_game = None
         self.coords_letters = None
@@ -110,8 +114,6 @@ class Tetris:
         self.up_click = None
         self.level = 'easy'
         self.action = None
-        self.language = 'ru'
-        self.sound = 'on'
 
     def start_game(self):
         """Начало игры"""
@@ -119,7 +121,13 @@ class Tetris:
         screen_image = load_image('screen.png', size=(SIZE_SCREEN[0], SIZE_SCREEN[1]))
         self.load_data()
         keys = None
+        self.sound_main = pygame.mixer.Sound('../data/music/main_music.mp3')
+        self.sound_main.set_volume(0.1)
+        self.sound_main.play()
         while True:
+            if not pygame.mixer.get_busy():
+                self.sound_main.play()
+
             for event in pygame.event.get():
                 # Получаем список зажатых клавиш
                 keys = pygame.key.get_pressed()
@@ -132,31 +140,55 @@ class Tetris:
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.up_click = event.pos
-
                 if event.type == pygame.KEYDOWN:
                     self.check_key_down(event)
-
                 if event.type == pygame.KEYUP:
                     if event.key in (pygame.K_s, pygame.K_DOWN):
                         self.new_shape = True
                         self.time_key_pressed = 0
+                if event.type == pygame.VIDEORESIZE:
+                    self.screen_resize(event)
+                    screen_image = load_image('screen.png', size=(SIZE_SCREEN[0], SIZE_SCREEN[1]))
 
-            if self.action is None and self.new_shape and not self.start_flag:
-                if self.time_key_pressed >= 1:
-                    if keys[pygame.K_LEFT]:
-                        self.action = 'left'
-                    elif keys[pygame.K_RIGHT]:
-                        self.action = 'right'
-                    elif keys[pygame.K_DOWN]:
-                        self.action = 'down'
-                    self.time_key_pressed = 0
-                self.time_key_pressed += self.sleep_key_pressed
+            self.key_pressed_check(keys)
 
             screen.blit(screen_image, (0, 0))
             self.draw_game(self.action)
             self.action = None
             pygame.display.flip()
             clock.tick(FPS)
+
+    def screen_resize(self, event):
+        global screen, SIZE_BLOCK, SIZE_SCREEN, image_block, group_buttons
+        SIZE_SCREEN = (event.w, event.h)
+        screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
+
+        while 24 * SIZE_BLOCK > SIZE_SCREEN[1]:
+            SIZE_BLOCK -= 1
+        while 24 * SIZE_BLOCK < SIZE_SCREEN[1]:
+            SIZE_BLOCK += 1
+        y = SIZE_SCREEN[1] // 4 - SIZE_BLOCK * 2 // 2
+        self.image_block = load_image('cube.png', -1, (SIZE_BLOCK, SIZE_BLOCK))
+        for index, coord in enumerate(self.coords_letters):
+            self.coords_letters[index][0] = SIZE_SCREEN[0] // 2 + (-3 + index) * SIZE_BLOCK
+            self.coords_letters[index][1] = y
+
+        buttons_start_sprites.empty()
+        self.start_buttons = dict()
+        group_buttons = []
+        self.load_buttons()
+
+    def key_pressed_check(self, keys):
+        if self.action is None and self.new_shape and not self.start_flag:
+            if self.time_key_pressed >= 1:
+                if keys[pygame.K_LEFT]:
+                    self.action = 'left'
+                elif keys[pygame.K_RIGHT]:
+                    self.action = 'right'
+                elif keys[pygame.K_DOWN]:
+                    self.action = 'down'
+                self.time_key_pressed = 0
+            self.time_key_pressed += self.sleep_key_pressed
 
     def check_key_down(self, event):
         if event.key in (pygame.K_w, pygame.K_UP):
@@ -191,16 +223,22 @@ class Tetris:
                 self.return_home()
 
     def return_home(self):
+        global screen
         shape_sprites.empty()
         buttons_main_sprites.empty()
+        screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
         self.start_flag = True
         for index, group in enumerate(group_buttons):
             if self.main_game.main_game_buttons['pause_button'] in group.buttons:
                 del group_buttons[index]
                 break
         for button in buttons_start_sprites:
-            button.be = True
+            if button not in (self.start_buttons['english_button'], self.start_buttons['russian_button'],
+                              self.start_buttons['sound_button'], self.start_buttons['not_sound_button']):
+                button.be = True
         self.main_game = None
+        if SOUND != 'off':
+            self.sound_main.set_volume(0.1)
 
     def load_data(self):
         global SIZE_BLOCK, image_block
@@ -217,16 +255,18 @@ class Tetris:
         ]
         self.image_block = load_image('cube.png', -1, (SIZE_BLOCK, SIZE_BLOCK))
         self.load_buttons()
+        self.start_buttons['easy_button'].image = self.start_buttons['easy_button'].click_image
+        self.start_buttons['easy_button'].name_new_image = 'click'
 
     def load_buttons(self):
         global group_buttons
         # Кнопка старта
-        start_image_1 = load_image('start4.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
-        start_image_2 = load_image('start3.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
+        start_image_1 = load_image('start_russian_prev.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
+        start_image_2 = load_image('start_russian_click.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
         start_button = Button((SIZE_SCREEN[0] // 2 - 2.5 * SIZE_BLOCK,
                                SIZE_SCREEN[1] // 2 + SIZE_BLOCK * 6), start_image_1, start_image_2, start_image_1,
                               buttons_start_sprites,
-                              self.click_start_button)
+                              self.click_start_button, 'default_button_click.mp3')
         self.start_buttons['start_button'] = start_button
         up_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 4),
                            load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
@@ -253,21 +293,22 @@ class Tetris:
         self.start_buttons['right_button'] = right_button
         self.start_buttons['down_button'] = down_button
 
-        easy_img = load_image(f'easy.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5), )
-        normal_img = load_image(f'normal.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        hard_img = load_image(f'hard.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        easy_img2 = load_image(f'easy2.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        normal_img2 = load_image(f'normal2.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        hard_img2 = load_image(f'hard2.png', size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        easy_img = load_image(PHRASES['ru']['easy_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        normal_img = load_image(PHRASES['ru']['normal_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        hard_img = load_image(PHRASES['ru']['hard_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        easy_img2 = load_image(PHRASES['ru']['easy_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        normal_img2 = load_image(PHRASES['ru']['normal_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        hard_img2 = load_image(PHRASES['ru']['hard_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
         easy = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5, SIZE_BLOCK * 16), easy_img, easy_img2, easy_img2,
                       buttons_start_sprites,
-                      lambda: self.click_level('easy'))
-        easy.image = easy.click_image
+                      lambda: self.click_level('easy'), 'default_button_click.mp3')
+
         normal = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8, SIZE_BLOCK * 16),
-                        normal_img, normal_img2, normal_img2, buttons_start_sprites, lambda: self.click_level('normal'))
+                        normal_img, normal_img2, normal_img2, buttons_start_sprites, lambda: self.click_level('normal'),
+                        'default_button_click.mp3')
         hard = Button((SIZE_SCREEN[0] // 2 + SIZE_BLOCK * 1.5, SIZE_BLOCK * 16), hard_img, hard_img2, hard_img2,
                       buttons_start_sprites,
-                      lambda: self.click_level('hard'))
+                      lambda: self.click_level('hard'), 'default_button_click.mp3')
         self.start_buttons['easy_button'] = easy
         self.start_buttons['normal_button'] = normal
         self.start_buttons['hard_button'] = hard
@@ -279,17 +320,17 @@ class Tetris:
 
         english_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
                                 language_image_english, language_image_english, language_image_russian,
-                                buttons_start_sprites, lambda: self.set_language('ru'))
+                                buttons_start_sprites, lambda: self.set_language('ru'), 'default_button_click.mp3')
         russian_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
                                 language_image_russian, language_image_russian, language_image_english,
-                                buttons_start_sprites, lambda: self.set_language('eng'))
+                                buttons_start_sprites, lambda: self.set_language('eng'), 'default_button_click.mp3')
 
         not_sound_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
                                   not_sound_image, not_sound_image, sound_image, buttons_start_sprites,
-                                  lambda: self.set_sound('on'))
+                                  lambda: self.set_sound('on'), 'default_button_click.mp3')
         sound_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
                               sound_image, sound_image, not_sound_image, buttons_start_sprites,
-                              lambda: self.set_sound('off'))
+                              lambda: self.set_sound('off'), 'default_button_click.mp3')
         self.start_buttons['russian_button'] = russian_button
         self.start_buttons['english_button'] = english_button
         self.start_buttons['sound_button'] = sound_button
@@ -302,8 +343,11 @@ class Tetris:
         group_buttons.append(GroupButtons([start_button]))
 
     def set_language(self, language):
-        self.language = language
-        if self.language == 'eng':
+        global LANGUAGE
+        LANGUAGE = language
+        self.update_languages_buttons()
+
+        if LANGUAGE == 'eng':
             self.start_buttons['russian_button'].be = False
             self.start_buttons['english_button'].be = True
 
@@ -311,21 +355,62 @@ class Tetris:
             self.start_buttons['english_button'].be = False
             self.start_buttons['russian_button'].be = True
 
+    def update_languages_buttons(self):
+        self.start_buttons['easy_button'].prev_image = load_image(PHRASES[LANGUAGE]['easy_button_prev'],
+                                                                  size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['easy_button'].current_image = load_image(PHRASES[LANGUAGE]['easy_button_click'],
+                                                                     size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['easy_button'].click_image = load_image(PHRASES[LANGUAGE]['easy_button_click'],
+                                                                   size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+
+        self.start_buttons['normal_button'].prev_image = load_image(PHRASES[LANGUAGE]['normal_button_prev'],
+                                                                    size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['normal_button'].current_image = load_image(PHRASES[LANGUAGE]['normal_button_click'],
+                                                                       size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['normal_button'].click_image = load_image(PHRASES[LANGUAGE]['normal_button_click'],
+                                                                     size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+
+        self.start_buttons['hard_button'].prev_image = load_image(PHRASES[LANGUAGE]['hard_button_prev'],
+                                                                  size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['hard_button'].current_image = load_image(PHRASES[LANGUAGE]['hard_button_click'],
+                                                                     size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['hard_button'].click_image = load_image(PHRASES[LANGUAGE]['hard_button_click'],
+                                                                   size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+
+        self.start_buttons['start_button'].prev_image = load_image(PHRASES[LANGUAGE]['start_button_prev'],
+                                                                   size=(SIZE_BLOCK * 5, SIZE_BLOCK * 2.5))
+        self.start_buttons['start_button'].current_image = load_image(PHRASES[LANGUAGE]['start_button_click'],
+                                                                      size=(SIZE_BLOCK * 5, SIZE_BLOCK * 2.5))
+        self.start_buttons['start_button'].click_image = load_image(PHRASES[LANGUAGE]['start_button_prev'],
+                                                                    size=(SIZE_BLOCK * 5, SIZE_BLOCK * 2.5))
+
+        self.start_buttons['easy_button'].update_image()
+        self.start_buttons['normal_button'].update_image()
+        self.start_buttons['hard_button'].update_image()
+        self.start_buttons['start_button'].update_image()
+
     def set_sound(self, action):
-        self.sound = action
-        if self.sound == 'off':
+        global SOUND
+        SOUND = action
+        if SOUND == 'off':
+            self.sound_main.set_volume(0.0)
             self.start_buttons['sound_button'].be = False
             self.start_buttons['not_sound_button'].be = True
 
         else:
+            self.sound_main.set_volume(0.1)
             self.start_buttons['sound_button'].be = True
             self.start_buttons['not_sound_button'].be = False
 
     def click_start_button(self):
+        global screen
         self.start_flag = False
         self.main_game = MainGame(self.level, self)
+        screen = screen = pygame.display.set_mode(SIZE_SCREEN)
         for button in buttons_start_sprites:
-            button.be = False
+            if button not in (self.start_buttons['english_button'], self.start_buttons['russian_button'],
+                              self.start_buttons['sound_button'], self.start_buttons['not_sound_button']):
+                button.be = False
         if self.level == 'easy':
             self.sleep_key_pressed = 0.2
         elif self.level == 'normal':
@@ -351,6 +436,7 @@ class Tetris:
             buttons_main_sprites.draw(screen)
             self.main_game.draw()
             self.main_game.update_shapes(action)
+        self.draw_autor()
 
     def update_particles(self):
         """Обновление снежинок"""
@@ -398,9 +484,9 @@ class Tetris:
                 for button in group.buttons:
                     if button != current_button:
                         button.image = button.prev_image
+                        button.name_new_image = 'prev'
 
     def draw_letters(self):
-
         letters = ['T', 'E', 'T', 'R', 'I', 'S']
         for index, val in enumerate(letters):
             screen.blit(load_image(f'tetris/{val}.png', -1, size=(SIZE_BLOCK, SIZE_BLOCK)),
@@ -415,9 +501,10 @@ class Tetris:
             self.coords_letters[index][2] = elem
 
     def draw_instruction(self):
-        size = int(SIZE_SCREEN[0] / SIZE_BLOCK / 2.1)
+
+        size = int(SIZE_SCREEN[0] // 100 * 1.5)
         font = pygame.font.Font(None, size)
-        text = font.render(PHRASES[self.language]['information_rotate'], True, (226, 235, 231))
+        text = font.render(PHRASES[LANGUAGE]['information_rotate'], True, (226, 235, 231))
         up_button = self.start_buttons['up_button']
         right_button = self.start_buttons['right_button']
         down_button = self.start_buttons['down_button']
@@ -426,20 +513,30 @@ class Tetris:
         text_y = up_button.rect.y + up_button.rect.h // 2
         screen.blit(text, (text_x, text_y))
 
-        text2 = font.render(PHRASES[self.language]['information_shift_shape'], True, (226, 235, 231))
+        text2 = font.render(PHRASES[LANGUAGE]['information_shift_shape'], True, (226, 235, 231))
         text_x2 = right_button.rect.x + right_button.rect.w
         text_y2 = right_button.rect.y + right_button.rect.h // 2
         screen.blit(text2, (text_x2, text_y2))
 
-        text3 = font.render(PHRASES[self.language]['accelerating_down_shape'], True, (226, 235, 231))
+        text3 = font.render(PHRASES[LANGUAGE]['accelerating_down_shape'], True, (226, 235, 231))
         text_x3 = down_button.rect.x + down_button.rect.w
 
         text_y3 = down_button.rect.y + down_button.rect.h // 2
         screen.blit(text3, (text_x3, text_y3))
 
+    def draw_autor(self):
+        font = pygame.font.Font(None, int(SIZE_SCREEN[0] // 100 * 1.5))
+        text = font.render('@alexsivkov', True, (226, 235, 231))
+        text_w = text.get_width()
+        text_h = text.get_height()
+        text_x = SIZE_SCREEN[0] - text_w - 10
+        text_y = SIZE_SCREEN[1] - text_h - 10
+        screen.blit(text, (text_x, text_y))
+
 
 class MainGame:
     def __init__(self, level, parent=None):
+        self.finish_music = False
         self.main_game_buttons = dict()
         self.open_home = None
         self.parent = parent
@@ -455,6 +552,7 @@ class MainGame:
         self.start_game = True
         self.count_lines = 0
         self.count_levels = 0
+        self.level = level
         self.finish = False
         if level == 'easy':
             self.v_level = 0.02
@@ -511,11 +609,11 @@ class MainGame:
             count_width = len(START_SHAPES[self.shape_future.form][0])
             count_height = len(START_SHAPES[self.shape_future.form])
 
-            font = pygame.font.Font(None, 50)
-            text_h = font.render('Следующая', True, (240, 239, 224)).get_height()
+            font = pygame.font.Font(None, int(SIZE_SCREEN[0] // 100 * 2.5))
+            text2 = font.render(PHRASES[LANGUAGE]['next_shape'][1], True, (240, 239, 224)).get_height()
 
             x = self.left + 12 * SIZE_BLOCK
-            y = self.top + text_h
+            y = self.top * 2 + text2 + 5
             x_center = x + SIZE_BLOCK * 3
             y_center = y + SIZE_BLOCK * 3
             self.shape_future.rect.x = x_center - SIZE_BLOCK * count_width // 2
@@ -535,8 +633,9 @@ class MainGame:
             self.draw_information_pause()
 
     def finish_game(self):
-        font = pygame.font.Font(None, 35)
-        text_lines = ["Вы проиграли.", "Нажмите на Enter,", "чтобы выйти"]
+        size = int(SIZE_SCREEN[0] // 100 * 2)
+        font = pygame.font.Font(None, size)
+        text_lines = PHRASES[LANGUAGE]['finish_information']
         rendered_lines = [font.render(line, True, (0, 0, 0)) for line in text_lines]
         text_w1 = rendered_lines[0].get_width()
         text_w2 = rendered_lines[1].get_width()
@@ -557,6 +656,14 @@ class MainGame:
         screen.blit(rendered_lines[0], (text_x1, text_y1))
         screen.blit(rendered_lines[1], (text_x2, text_y2))
         screen.blit(rendered_lines[2], (text_x3, text_y3))
+        if not self.finish_music:
+            self.finish_music_func()
+
+    def finish_music_func(self):
+        self.parent.sound_main.set_volume(0.0)
+        sound = pygame.mixer.Sound('../data/music/game_lost.mp3')
+        sound.play()
+        self.finish_music = True
 
     def check_continuation_game(self):
         for coord_line in self.board.board:
@@ -566,8 +673,9 @@ class MainGame:
         return True
 
     def draw_information_home(self):
-        font = pygame.font.Font(None, 35)
-        text_lines = ["Чтобы вернуться домой,", "нажмите на кнопку Q"]
+        size = int(SIZE_SCREEN[0] // 100 * 2)
+        font = pygame.font.Font(None, size)
+        text_lines = PHRASES[LANGUAGE]['home_information']
         rendered_lines = [font.render(line, True, (0, 0, 0)) for line in text_lines]
         text_w21 = rendered_lines[0].get_width()
         text_w22 = rendered_lines[1].get_width()
@@ -577,17 +685,18 @@ class MainGame:
         text_x22 = SIZE_SCREEN[0] // 2 - text_w22 // 2
         text_y21 = SIZE_SCREEN[1] // 2 - text_h21 // 2
         text_y22 = text_y21 + text_h21
-        background = pygame.Surface([text_w21 + 20, text_h21 + text_h22 + 20])
+        background = pygame.Surface([max(text_w21, text_w22) + 20, text_h21 + text_h22 + 20])
         background.fill((255, 255, 255))
         background.set_alpha(170)
-        screen.blit(background, (text_x21 - 10, text_y21 - 10))
+        screen.blit(background, (min(text_x21, text_x22) - 10, text_y21 - 10))
         screen.blit(rendered_lines[0], (text_x21, text_y21))
         screen.blit(rendered_lines[1], (text_x22, text_y22))
 
     def draw_information_pause(self):
-        font = pygame.font.Font(None, 70)
+        size = int(SIZE_SCREEN[0] // 100 * 3)
+        font = pygame.font.Font(None, size)
 
-        text = font.render('Пауза', True, (0, 0, 0))
+        text = font.render(PHRASES[LANGUAGE]['pause'], True, (0, 0, 0))
         text_w = text.get_width()
         text_h = text.get_height()
         text_x = SIZE_SCREEN[0] // 2 - text_w // 2
@@ -598,8 +707,9 @@ class MainGame:
         screen.blit(background, (text_x - 10, text_y - 10))
         screen.blit(text, (text_x, text_y))
 
-        font2 = pygame.font.Font(None, 35)
-        text_lines = ["Чтобы продолжить, нажмите на кнопку", "или нажмите Escape"]
+        size2 = int(SIZE_SCREEN[0] // 100 * 2)
+        font2 = pygame.font.Font(None, size2)
+        text_lines = PHRASES[LANGUAGE]['pause_information']
         rendered_lines = [font2.render(line, True, (0, 0, 0)) for line in text_lines]
         text_w21 = rendered_lines[0].get_width()
         text_w22 = rendered_lines[1].get_width()
@@ -626,28 +736,27 @@ class MainGame:
                     [self.color1, self.color2, self.color3, self.color4])
 
     def draw_information(self):
-        font = pygame.font.Font(None, 50)
-        text = font.render(f"Очки: {self.points}", True, (232, 229, 62))
+        size = int(SIZE_SCREEN[0] // 100 * 2.5)
+        font = pygame.font.Font(None, size)
+        text = font.render(f"{PHRASES[LANGUAGE]['score']}: {self.points}", True, (232, 229, 62))
         text_w = text.get_width()
         text_h = text.get_height()
         text_x = self.left - text_w - SIZE_BLOCK * 3
         text_y = self.top
-
         screen.blit(text, (text_x, text_y))
         pygame.draw.rect(screen, (166, 164, 40), (text_x - 10, text_y - 10,
                                                   text_w + 20, text_h + 20), 4)
 
-        text2 = font.render(f"Линии: {self.count_lines}", True, (232, 229, 62))
+        text2 = font.render(f"{PHRASES[LANGUAGE]['lines']}: {self.count_lines}", True, (232, 229, 62))
         text_w2 = text2.get_width()
         text_h2 = text2.get_height()
         text_x2 = self.left - text_w2 - SIZE_BLOCK * 3
         text_y2 = self.top + text_h + 50
-
         screen.blit(text2, (text_x2, text_y2))
         pygame.draw.rect(screen, (166, 164, 40), (text_x2 - 10, text_y2 - 10,
                                                   text_w2 + 20, text_h2 + 20), 4)
 
-        text3 = font.render(f"Уровень: {self.count_levels}", True, (232, 229, 62))
+        text3 = font.render(f"{PHRASES[LANGUAGE]['level']}: {self.count_levels}", True, (232, 229, 62))
         text_w3 = text3.get_width()
         text_h3 = text3.get_height()
         text_x3 = self.left - text_w3 - SIZE_BLOCK * 3
@@ -656,20 +765,35 @@ class MainGame:
         screen.blit(text3, (text_x3, text_y3))
         pygame.draw.rect(screen, (166, 164, 40), (text_x3 - 10, text_y3 - 10,
                                                   text_w3 + 20, text_h3 + 20), 4)
+        string = f"{PHRASES[LANGUAGE]['complexity']}: {PHRASES[LANGUAGE][f'complexity_{self.level}']}"
+        text4 = font.render(string, True, (232, 229, 62))
+        text_w4 = text4.get_width()
+        text_h4 = text4.get_height()
+        text_x4 = self.left - text_w4 - SIZE_BLOCK * 3
+        text_y4 = self.top + text_h + 150 + text_h2 + text_h3
+
+        screen.blit(text4, (text_x4, text_y4))
+        pygame.draw.rect(screen, (166, 164, 40), (text_x4 - 10, text_y4 - 10,
+                                                  text_w4 + 20, text_h4 + 20), 4)
 
     def draw_field_next_shape(self):
-        font = pygame.font.Font(None, 50)
+        size = int(SIZE_SCREEN[0] // 100 * 2.5)
+        font = pygame.font.Font(None, size)
 
-        text = font.render('Следующая', True, (240, 239, 224))
-
-        text_h = text.get_height()
+        text = font.render(PHRASES[LANGUAGE]['next_shape'][0], True, (240, 239, 224))
         text_x = self.left + 12 * SIZE_BLOCK
         text_y = self.top
         screen.blit(text, (text_x, text_y))
+
+        text2 = font.render(PHRASES[LANGUAGE]['next_shape'][1], True, (240, 239, 224))
+        text2_h = text2.get_height()
+        text2_x = text_x
+        text2_y = self.top + text_y
+        screen.blit(text2, (text2_x, text2_y))
         pygame.draw.rect(screen, (240, 239, 224),
-                         (self.left + 12 * SIZE_BLOCK, self.top + text_h, 6 * SIZE_BLOCK, 6 * SIZE_BLOCK), 4)
+                         (self.left + 12 * SIZE_BLOCK, text2_y + text2_h + 5, 6 * SIZE_BLOCK, 6 * SIZE_BLOCK), 4)
         x = self.left + 12 * SIZE_BLOCK
-        y = self.top + text_h
+        y = text2_y + text2_h + 5
         for i in range(6):
             pygame.draw.line(screen, (181, 178, 5),
                              (x + 4, y + i * SIZE_BLOCK), (x + 6 * SIZE_BLOCK - 4, y + i * SIZE_BLOCK))
@@ -681,11 +805,13 @@ class MainGame:
         image_pause2 = load_image('pause2.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_pause.get_width() - 20
         y = 20
-        pause_button = Button((x, y), image_pause, image_pause, image_pause2, buttons_main_sprites, self.set_pause)
+        pause_button = Button((x, y), image_pause, image_pause, image_pause2, buttons_main_sprites, self.set_pause,
+                              'default_button_click.mp3')
 
         image_home = load_image('home.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_home.get_width() * 2 - 45
-        home_button = Button((x, y), image_home, image_home, image_home, buttons_main_sprites, self.go_to_home)
+        home_button = Button((x, y), image_home, image_home, image_home, buttons_main_sprites, self.go_to_home,
+                             'default_button_click.mp3')
         self.main_game_buttons['pause_button'] = pause_button
         self.main_game_buttons['home_button'] = home_button
         group_buttons.append(GroupButtons([pause_button, home_button]))
@@ -700,6 +826,8 @@ class MainGame:
                     self.shape_now.move('down')
 
             else:
+                sound = pygame.mixer.Sound('../data/music/shape_fall.mp3')
+                sound.play()
                 self.update_shape = True
                 self.checking_lines()
 
@@ -992,14 +1120,22 @@ class Particle(pygame.sprite.Sprite):
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, coord, prev_image, current_image, click_image, group_sprites, action=None):
+    def __init__(self, coord, prev_image, current_image, click_image, group_sprites, action=None, music=None):
         super().__init__(group_sprites)
+        if music is not None:
+            self.sound = pygame.mixer.Sound(f'../data/music/{music}')
+            self.sound.set_volume(1)
+        else:
+            self.sound = None
         self.be = True
         self.action = action
         self.prev_image = prev_image
         self.current_image = current_image
         self.click_image = click_image
         self.image = prev_image
+        self.name_new_image = 'prev'
+        self.k_x = self.image.get_width() // SIZE_BLOCK
+        self.k_y = self.image.get_height() // SIZE_BLOCK
         self.rect = pygame.Rect(coord[0], coord[1], self.image.get_width(), self.image.get_height())
 
     def check_do_select(self, up_click, down_click):
@@ -1012,10 +1148,14 @@ class Button(pygame.sprite.Sprite):
                     x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
                     not (x <= up_click[0] <= x + w and y <= up_click[1] <= y + h):
                 self.image = self.prev_image
+                self.name_new_image = 'prev'
             elif up_click is not None and down_click is not None and (
                     x <= down_click[0] <= x + w and
                     y <= down_click[1] <= h + y):
+                if self.sound is not None and SOUND == 'on':
+                    self.sound.play()
                 self.image = self.click_image
+                self.name_new_image = 'click'
                 if self.action is not None:
                     self.action()
                 return True
@@ -1023,7 +1163,32 @@ class Button(pygame.sprite.Sprite):
             elif down_click is not None and \
                     x <= down_click[0] <= x + w and \
                     y <= down_click[1] <= h + y:
+                self.name_new_image = 'current'
                 self.image = self.current_image
+
+    def update_image(self):
+        if self.name_new_image == 'prev':
+            self.image = self.prev_image
+        elif self.name_new_image == 'current':
+            self.image = self.current_image
+        else:
+            self.image = self.click_image
+
+    def update_coord(self, size_screen_copy):
+        ...
+        # window_pos = screen.get_pos()
+        # if window_pos[0] - self.rect.y != SIZE_SCREEN[1] - self.rect.y:
+        #     ...
+        #     #self.rect.y += SIZE_SCREEN[1] - self.rect.y
+        # if size_screen_copy[0] - self.rect.x != SIZE_SCREEN[0] - self.rect.x:
+        #     print('no')
+
+
+    def resize_image(self):
+        self.prev_image = pygame.transform.scale(self.prev_image, (self.k_x * SIZE_BLOCK, self.k_y * SIZE_BLOCK))
+        self.current_image = pygame.transform.scale(self.current_image, (self.k_x * SIZE_BLOCK, self.k_y * SIZE_BLOCK))
+        self.click_image = pygame.transform.scale(self.click_image, (self.k_x * SIZE_BLOCK, self.k_y * SIZE_BLOCK))
+        self.update_image()
 
 
 class GroupButtons:
@@ -1041,17 +1206,17 @@ class GroupButtons:
                 ...
                 # flag = False
                 # for b in self.buttons:
-                #     if b.image == b.select_image:
+                #     if b.image == b.click_image:
                 #         flag = True
                 #         break
                 # if not flag:
-                #     button.image = button.select_image
+                #     button.image = button.click_image
         return current_button
 
 
 if __name__ == '__main__':
     pygame.display.set_caption('Тетрис')
-    fullname = os.path.join('../data', 'icon.png')
+    fullname = os.path.join('../data/images', 'icon.png')
     image_icon = pygame.image.load(fullname)
     pygame.display.set_icon(image_icon)
 
