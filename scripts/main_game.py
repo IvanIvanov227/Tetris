@@ -5,18 +5,25 @@ import sys
 import pygame
 import random
 
-from constants import TYPES_OF_SHAPES, START_SHAPES, START_COORDINATES, COLORS, PHRASES
+import sqlite3
 
-pygame.init()
-pygame.mixer.init()
-screensize = pygame.display.list_modes()
-SIZE_SCREEN = width, height = screensize[10][0], screensize[10][1]
+from constants import START_SHAPES, START_COORDINATES, PHRASES, FPS
+from button import Button, GroupButtons, ComboButton
+from shape import Shape, draw_shapes
+from particle import Particle
+from board import Board
+
+SIZE_SCREEN = (1000, 600)
 screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
-FPS = 60
+pygame.display.set_caption('Тетрис')
+fullname = os.path.join('../data/images', 'icon.png')
+image_icon = pygame.image.load(fullname)
+pygame.display.set_icon(image_icon)
 SIZE_BLOCK = 0
-image_block = None
+
 LANGUAGE = 'ru'
 SOUND = 'on'
+image_block = None
 group_buttons = []
 particle_sprites = pygame.sprite.Group()
 buttons_start_sprites = pygame.sprite.Group()
@@ -48,58 +55,63 @@ def load_image(name, colorkey=None, size=None):
     return image
 
 
-def draw_shapes(x, y, surface, coords, colors):
-    for i in range(len(coords)):
-        line = coords[i]
-        for j, cube in enumerate(line):
-            if cube != 0:
-                draw_cube(x + j * SIZE_BLOCK, y + i * SIZE_BLOCK, surface, colors)
+# def increase_volume(sound, limit, step):
+#     if int(sound.get_volume()) != int(limit):
+#         sound.set_volume(sound.get_volume() + step)
+
+def draw_black_screen():
+    black_sur = pygame.surface.Surface(SIZE_SCREEN)
+    black_sur.set_alpha(200)
+    black_sur.fill((0, 0, 0))
+    screen.blit(black_sur, (0, 0))
 
 
-def draw_cube(x, y, surface, colors):
-    color1 = colors[0]
-    color2 = colors[1]
-    color3 = colors[2]
-    color4 = colors[3]
-    pygame.draw.rect(surface, color2,
-                     pygame.Rect(x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4, SIZE_BLOCK / 2, SIZE_BLOCK / 2))
-    pygame.draw.rect(surface, color3,
-                     pygame.Rect(x, y + SIZE_BLOCK / 4, SIZE_BLOCK / 4, SIZE_BLOCK / 2))
-    pygame.draw.rect(surface, color3,
-                     pygame.Rect(x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4, SIZE_BLOCK / 4 + 1, SIZE_BLOCK / 2))
-    pygame.draw.rect(surface, color1,
-                     pygame.Rect(x + SIZE_BLOCK / 4, y, SIZE_BLOCK / 2, SIZE_BLOCK / 4))
-    pygame.draw.rect(surface, color4,
-                     pygame.Rect(x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4, SIZE_BLOCK / 2, SIZE_BLOCK / 4 + 1))
+def draw_frame_and_surface(x_frame, y_frame, width_frame, height_frame):
+    pygame.draw.rect(screen, (255, 255, 255),
+                     (x_frame, y_frame, width_frame, height_frame), 4)
+    background = pygame.Surface((width_frame, height_frame))
+    background.fill((255, 255, 255))
+    background.set_alpha(170)
+    screen.blit(background, (x_frame, y_frame))
 
-    pygame.draw.polygon(surface, color3,
-                        ((x, y), (x, y + SIZE_BLOCK / 4), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4)))
-    pygame.draw.polygon(surface, color1,
-                        ((x, y), (x + SIZE_BLOCK / 4, y), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK / 4)))
-    pygame.draw.polygon(surface, color1,
-                        ((x + SIZE_BLOCK * 3 / 4, y), (x + SIZE_BLOCK, y),
-                         (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4)))
-    pygame.draw.polygon(surface, color3,
-                        ((x + SIZE_BLOCK, y), (x + SIZE_BLOCK, y + SIZE_BLOCK / 4),
-                         (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK / 4)))
-    pygame.draw.polygon(surface, color3,
-                        ((x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK * 3 / 4),
-                         (x + SIZE_BLOCK, y + SIZE_BLOCK * 3 / 4), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
-    pygame.draw.polygon(surface, color4,
-                        ((x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK * 3 / 4),
-                         (x + SIZE_BLOCK * 3 / 4, y + SIZE_BLOCK), (x + SIZE_BLOCK, y + SIZE_BLOCK)))
-    pygame.draw.polygon(surface, color4,
-                        ((x, y + SIZE_BLOCK), (x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4),
-                         (x + SIZE_BLOCK / 4, y + SIZE_BLOCK)))
-    pygame.draw.polygon(surface, color3,
-                        ((x, y + SIZE_BLOCK * 3 / 4), (x, y + SIZE_BLOCK),
-                         (x + SIZE_BLOCK / 4, y + SIZE_BLOCK * 3 / 4)))
+
+def draw_text_in_black_screen(lines):
+    min_text_x = 1000000000
+    max_text_w = 0
+    height = 0
+    y = SIZE_SCREEN[1] // 2
+    for line in lines:
+        size = line[0]
+        font = pygame.font.Font(None, size)
+        text = font.render(line[1], True, (0, 0, 0))
+        text_w = text.get_width()
+        text_h = text.get_height()
+        text_x = SIZE_SCREEN[0] // 2 - text_w // 2
+        y -= text_h // 2
+        min_text_x = min(min_text_x, text_x)
+        max_text_w = max(max_text_w, text_w)
+        height += text_h
+    y_min = y
+    draw_frame_and_surface(min_text_x - SIZE_BLOCK, y_min - SIZE_BLOCK, max_text_w + SIZE_BLOCK * 2,
+                           height + SIZE_BLOCK * 2)
+    for line in lines:
+        size = line[0]
+        font = pygame.font.Font(None, size)
+        text = font.render(line[1], True, (0, 0, 0))
+        text_w = text.get_width()
+        text_h = text.get_height()
+        text_x = SIZE_SCREEN[0] // 2 - text_w // 2
+        screen.blit(text, (text_x, y))
+        y += text_h
 
 
 class Tetris:
     """Главный класс игры"""
 
     def __init__(self):
+        self.button_open_black_screen = None
+        self.connect = sqlite3.connect('../data/rating.sqlite')
+        self.cur = self.connect.cursor()
         self.sound_main = None
         self.start_buttons = dict()
         self.main_game = None
@@ -114,6 +126,7 @@ class Tetris:
         self.up_click = None
         self.level = 'easy'
         self.action = None
+        self.activity_window = None
 
     def start_game(self):
         """Начало игры"""
@@ -162,6 +175,7 @@ class Tetris:
         global screen, SIZE_BLOCK, SIZE_SCREEN, image_block, group_buttons
         SIZE_SCREEN = (event.w, event.h)
         screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
+        pygame.display.set_icon(image_icon)
 
         while 24 * SIZE_BLOCK > SIZE_SCREEN[1]:
             SIZE_BLOCK -= 1
@@ -226,17 +240,20 @@ class Tetris:
         global screen
         shape_sprites.empty()
         buttons_main_sprites.empty()
-        screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
+
         self.start_flag = True
         for index, group in enumerate(group_buttons):
             if self.main_game.main_game_buttons['pause_button'] in group.buttons:
                 del group_buttons[index]
                 break
-        for button in buttons_start_sprites:
-            if button not in (self.start_buttons['english_button'], self.start_buttons['russian_button'],
-                              self.start_buttons['sound_button'], self.start_buttons['not_sound_button']):
-                button.be = True
+        for name in self.start_buttons:
+            if self.start_buttons[name].be is False:
+                self.start_buttons[name].be = True
+            else:
+                self.start_buttons[name].be = False
         self.main_game = None
+        self.button_open_black_screen = None
+        self.activity_window = None
         if SOUND != 'off':
             self.sound_main.set_volume(0.1)
 
@@ -317,43 +334,78 @@ class Tetris:
         language_image_english = load_image('english.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
         sound_image = load_image('sound.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
         not_sound_image = load_image('not_sound.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        records_image = load_image('records.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
 
-        english_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
-                                language_image_english, language_image_english, language_image_russian,
-                                buttons_start_sprites, lambda: self.set_language('ru'), 'default_button_click.mp3')
-        russian_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
-                                language_image_russian, language_image_russian, language_image_english,
-                                buttons_start_sprites, lambda: self.set_language('eng'), 'default_button_click.mp3')
+        language_button = ComboButton((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10),
+                                      language_image_russian, language_image_english,
+                                      buttons_start_sprites, self.set_language,
+                                      'default_button_click.mp3')
 
-        not_sound_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
-                                  not_sound_image, not_sound_image, sound_image, buttons_start_sprites,
-                                  lambda: self.set_sound('on'), 'default_button_click.mp3')
-        sound_button = Button((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
-                              sound_image, sound_image, not_sound_image, buttons_start_sprites,
-                              lambda: self.set_sound('off'), 'default_button_click.mp3')
-        self.start_buttons['russian_button'] = russian_button
-        self.start_buttons['english_button'] = english_button
+        sound_button = ComboButton((SIZE_BLOCK, SIZE_SCREEN[1] - SIZE_BLOCK * 2),
+                                   sound_image, not_sound_image, buttons_start_sprites,
+                                   self.set_sound, 'default_button_click.mp3')
+
+        records_button = Button((SIZE_SCREEN[0] - SIZE_BLOCK * 2 - 10, SIZE_BLOCK // 2), records_image, records_image,
+                                records_image, buttons_start_sprites, self.records_draw, 'default_button_click.mp3')
+        self.start_buttons['language_button'] = language_button
         self.start_buttons['sound_button'] = sound_button
-        self.start_buttons['not_sound_button'] = not_sound_button
+        self.start_buttons['records_button'] = records_button
 
-        group_buttons.append(GroupButtons([russian_button, english_button]))
-        group_buttons.append(GroupButtons([sound_button, not_sound_button]))
+        group_buttons.append(GroupButtons([language_button]))
+        group_buttons.append(GroupButtons([sound_button]))
+        group_buttons.append(GroupButtons([records_button]))
 
         group_buttons.append(GroupButtons([easy, normal, hard]))
         group_buttons.append(GroupButtons([start_button]))
 
-    def set_language(self, language):
-        global LANGUAGE
-        LANGUAGE = language
-        self.update_languages_buttons()
-
-        if LANGUAGE == 'eng':
-            self.start_buttons['russian_button'].be = False
-            self.start_buttons['english_button'].be = True
+    def records_draw(self):
+        if self.button_open_black_screen is not None:
+            for name in self.start_buttons:
+                if self.start_buttons[name] != self.button_open_black_screen:
+                    if self.start_buttons[name].be is False:
+                        self.start_buttons[name].be = True
+                    else:
+                        self.start_buttons[name].be = False
+            self.button_open_black_screen = None
+            self.activity_window = None
 
         else:
-            self.start_buttons['english_button'].be = False
-            self.start_buttons['russian_button'].be = True
+            self.activity_window = self.draw_record_menu
+            self.button_open_black_screen = self.start_buttons['records_button']
+            for name in self.start_buttons:
+                if self.start_buttons[name] != self.button_open_black_screen:
+                    if self.start_buttons[name].be is False:
+                        self.start_buttons[name].be = True
+                    else:
+                        self.start_buttons[name].be = False
+
+    def draw_record_menu(self):
+        best_level = int(self.cur.execute('SELECT best_level FROM best_results WHERE id = 1').fetchone()[0])
+        best_score = int(self.cur.execute('SELECT best_score FROM best_results WHERE id = 1').fetchone()[0])
+        more_lines = int(self.cur.execute('SELECT more_lines FROM best_results WHERE id = 1').fetchone()[0])
+        more_shape = int(self.cur.execute('SELECT more_shape FROM best_results WHERE id = 1').fetchone()[0])
+        size = SIZE_SCREEN[0] // 100 * 4
+        size2 = SIZE_SCREEN[0] // 100 * 3
+        lines = (
+            (size, PHRASES[LANGUAGE]['records']),
+            (size2, f" "),
+            (size2, f"{PHRASES[LANGUAGE]['score']}      {best_score}"),
+            (size2, f" "),
+            (size2, f"{PHRASES[LANGUAGE]['level']}      {best_level}"),
+            (size2, f" "),
+            (size2, f"{PHRASES[LANGUAGE]['lines']}      {more_lines}"),
+            (size2, f" "),
+            (size2, f"{PHRASES[LANGUAGE]['shapes']}       {more_shape}")
+        )
+        draw_text_in_black_screen(lines)
+
+    def set_language(self, number):
+        global LANGUAGE
+        if number == '1':
+            LANGUAGE = 'ru'
+        else:
+            LANGUAGE = 'eng'
+        self.update_languages_buttons()
 
     def update_languages_buttons(self):
         self.start_buttons['easy_button'].prev_image = load_image(PHRASES[LANGUAGE]['easy_button_prev'],
@@ -389,28 +441,27 @@ class Tetris:
         self.start_buttons['hard_button'].update_image()
         self.start_buttons['start_button'].update_image()
 
-    def set_sound(self, action):
+    def set_sound(self, number):
         global SOUND
-        SOUND = action
+        if number == '1':
+            SOUND = 'on'
+        else:
+            SOUND = 'off'
         if SOUND == 'off':
             self.sound_main.set_volume(0.0)
-            self.start_buttons['sound_button'].be = False
-            self.start_buttons['not_sound_button'].be = True
-
         else:
             self.sound_main.set_volume(0.1)
-            self.start_buttons['sound_button'].be = True
-            self.start_buttons['not_sound_button'].be = False
 
     def click_start_button(self):
         global screen
         self.start_flag = False
         self.main_game = MainGame(self.level, self)
-        screen = screen = pygame.display.set_mode(SIZE_SCREEN)
-        for button in buttons_start_sprites:
-            if button not in (self.start_buttons['english_button'], self.start_buttons['russian_button'],
-                              self.start_buttons['sound_button'], self.start_buttons['not_sound_button']):
-                button.be = False
+
+        for name in self.start_buttons:
+            if self.start_buttons[name].be is False:
+                self.start_buttons[name].be = True
+            else:
+                self.start_buttons[name].be = False
         if self.level == 'easy':
             self.sleep_key_pressed = 0.2
         elif self.level == 'normal':
@@ -426,17 +477,27 @@ class Tetris:
         particle_sprites.draw(screen)
         self.update_particles()
         self.draw_field()
-        self.draw_buttons()
+        self.check_click_button()
 
         if self.start_flag:
             self.draw_letters()
             self.draw_instruction()
             buttons_start_sprites.draw(screen)
+            self.draw_autor()
+
         else:
             buttons_main_sprites.draw(screen)
             self.main_game.draw()
             self.main_game.update_shapes(action)
-        self.draw_autor()
+            self.draw_autor()
+
+        if self.button_open_black_screen not in (None, True):
+            draw_black_screen()
+            screen.blit(self.button_open_black_screen.image,
+                        (self.button_open_black_screen.rect.x, self.button_open_black_screen.rect.y))
+
+        if self.activity_window is not None:
+            self.activity_window()
 
     def update_particles(self):
         """Обновление снежинок"""
@@ -445,7 +506,7 @@ class Tetris:
         if self.time_draw_particle >= 1:
             self.time_draw_particle = 0
             Particle(random.random() * SIZE_SCREEN[0], SIZE_SCREEN[1],
-                     random.randint(15, 30), random.randint(2, 4))
+                     random.randint(15, 30), random.randint(2, 4), particle_sprites)
 
         for particle in particle_sprites:
             if type(particle) == Particle:
@@ -475,10 +536,9 @@ class Tetris:
         pygame.draw.rect(screen, (11, 2, 20),
                          (x + SIZE_BLOCK, y, 10 * SIZE_BLOCK, 20 * SIZE_BLOCK))
 
-    def draw_buttons(self):
+    def check_click_button(self):
         for group in group_buttons:
-            current_button = group.check_do_select_buttons_for_group(self.up_click, self.down_click)
-
+            current_button = group.check_do_select_buttons_for_group(self.up_click, self.down_click, SOUND)
             if current_button is not None:
                 self.up_click, self.down_click = None, None
                 for button in group.buttons:
@@ -501,7 +561,6 @@ class Tetris:
             self.coords_letters[index][2] = elem
 
     def draw_instruction(self):
-
         size = int(SIZE_SCREEN[0] // 100 * 1.5)
         font = pygame.font.Font(None, size)
         text = font.render(PHRASES[LANGUAGE]['information_rotate'], True, (226, 235, 231))
@@ -536,14 +595,16 @@ class Tetris:
 
 class MainGame:
     def __init__(self, level, parent=None):
+        self.connect = sqlite3.connect('../data/rating.sqlite')
+        self.cur = self.connect.cursor()
         self.finish_music = False
         self.main_game_buttons = dict()
         self.open_home = None
         self.parent = parent
         self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
         self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
-        self.board = Board(10, 20, self.left, self.top)
-        self.points = 0
+        self.board = Board(10, 20, self.left, self.top, SIZE_BLOCK)
+        self.score = 0
         self.shape_now = None
         self.shape_future = None
         self.update_shape = True
@@ -560,6 +621,7 @@ class MainGame:
             self.v_level = 0.03
         else:
             self.v_level = 0.04
+        self.count_shapes = 0
         # Цвета фигур после падения
         self.color1 = pygame.Color((212, 211, 201))
         self.color2 = pygame.Color((212, 211, 201))
@@ -579,11 +641,12 @@ class MainGame:
         self.color4.hsva = (hsv4[0], hsv3[1], 50, hsv1[3])
 
     def draw(self):
-        self.board.render()
+        self.board.render(screen)
         self.draw_information()
         self.draw_field_next_shape()
-
-        if self.update_shape:
+        if self.update_shape and not self.finish:
+            self.check_results()
+            self.count_shapes += 1
             if not self.start_game:
                 self.parent.new_shape = False
             self.start_game = False
@@ -593,8 +656,8 @@ class MainGame:
                 self.shape_now.kill()
                 self.shape_now = self.shape_future
             else:
-                self.shape_now = Shape(self.count_levels, self)
-            self.shape_future = Shape(self.count_levels, self)
+                self.shape_now = Shape(self.count_levels, shape_sprites, SIZE_SCREEN, SIZE_BLOCK, parent=self)
+            self.shape_future = Shape(self.count_levels, shape_sprites, SIZE_SCREEN, SIZE_BLOCK, parent=self)
 
             self.shape_now.rect.x = self.left + SIZE_BLOCK * START_COORDINATES[self.shape_now.form][0]
             self.shape_now.rect.y = self.top
@@ -603,6 +666,7 @@ class MainGame:
             result = self.check_continuation_game()
             if not result:
                 self.finish = True
+                self.finish_game()
 
             self.shape_now.draw_start(0, 0, self.shape_now.image)
 
@@ -622,47 +686,50 @@ class MainGame:
 
         shape_sprites.draw(screen)
         self.draw_fall_shapes()
-        if self.finish:
-            self.finish_game()
-            self.main_game_buttons['pause_button'].be = False
-            self.main_game_buttons['home_button'].be = False
 
-        if self.open_home:
-            self.draw_information_home()
-        elif not self.activity:
-            self.draw_information_pause()
+    def check_results(self):
+        best_score = int(self.cur.execute('SELECT best_score FROM best_results WHERE id = 1').fetchone()[0])
+        best_level = int(self.cur.execute('SELECT best_level FROM best_results WHERE id = 1').fetchone()[0])
+        more_lines = int(self.cur.execute('SELECT more_lines FROM best_results WHERE id = 1').fetchone()[0])
+        more_shape = int(self.cur.execute('SELECT more_shape FROM best_results WHERE id = 1').fetchone()[0])
+
+        if self.score > best_score:
+            self.cur.execute('UPDATE best_results SET best_score = ? WHERE id = 1', (self.score,))
+        if self.count_levels > best_level:
+            self.cur.execute('UPDATE best_results SET best_level = ? WHERE id = 1', (self.count_levels,))
+        if self.count_lines > more_lines:
+            self.cur.execute('UPDATE best_results SET more_lines = ? WHERE id = 1', (self.count_lines,))
+        if self.count_shapes > more_shape:
+            self.cur.execute('UPDATE best_results SET more_shape = ? WHERE id = 1', (self.count_shapes,))
+
+        self.connect.commit()
 
     def finish_game(self):
-        size = int(SIZE_SCREEN[0] // 100 * 2)
-        font = pygame.font.Font(None, size)
-        text_lines = PHRASES[LANGUAGE]['finish_information']
-        rendered_lines = [font.render(line, True, (0, 0, 0)) for line in text_lines]
-        text_w1 = rendered_lines[0].get_width()
-        text_w2 = rendered_lines[1].get_width()
-        text_w3 = rendered_lines[1].get_width()
-        text_h1 = rendered_lines[0].get_height()
-        text_h2 = rendered_lines[1].get_height()
-        text_h3 = rendered_lines[1].get_height()
-        text_x1 = SIZE_SCREEN[0] // 2 - text_w1 // 2
-        text_x2 = SIZE_SCREEN[0] // 2 - text_w2 // 2
-        text_x3 = SIZE_SCREEN[0] // 2 - text_w3 // 2
-        text_y1 = SIZE_SCREEN[1] // 2 - text_h1 // 2
-        text_y2 = text_y1 + text_h1
-        text_y3 = text_y2 + text_h2
-        background = pygame.Surface([max(text_w1, text_w2, text_w3) + 20, text_h1 + text_h2 + text_h3 + 20])
-        background.fill((255, 255, 255))
-        background.set_alpha(170)
-        screen.blit(background, (min(text_x1, text_x2, text_x3) - 10, text_y1 - 10))
-        screen.blit(rendered_lines[0], (text_x1, text_y1))
-        screen.blit(rendered_lines[1], (text_x2, text_y2))
-        screen.blit(rendered_lines[2], (text_x3, text_y3))
+        for name in self.main_game_buttons:
+            if self.main_game_buttons[name].be is False:
+                self.main_game_buttons[name].be = True
+            else:
+                self.main_game_buttons[name].be = False
+        self.parent.activity_window = self.finish_draw
+
+    def finish_draw(self):
+        draw_black_screen()
+        size = int(SIZE_SCREEN[0] // 100 * 4)
+        lines = (
+            (size, PHRASES[LANGUAGE]['finish_information'][0]),
+            (size, PHRASES[LANGUAGE]['finish_information'][1]),
+            (size, PHRASES[LANGUAGE]['finish_information'][2])
+        )
+        draw_text_in_black_screen(lines)
+
         if not self.finish_music:
             self.finish_music_func()
 
     def finish_music_func(self):
-        self.parent.sound_main.set_volume(0.0)
-        sound = pygame.mixer.Sound('../data/music/game_lost.mp3')
-        sound.play()
+        if SOUND == 'on':
+            self.parent.sound_main.set_volume(0.0)
+            sound = pygame.mixer.Sound('../data/music/game_lost.mp3')
+            sound.play()
         self.finish_music = True
 
     def check_continuation_game(self):
@@ -673,58 +740,23 @@ class MainGame:
         return True
 
     def draw_information_home(self):
-        size = int(SIZE_SCREEN[0] // 100 * 2)
-        font = pygame.font.Font(None, size)
-        text_lines = PHRASES[LANGUAGE]['home_information']
-        rendered_lines = [font.render(line, True, (0, 0, 0)) for line in text_lines]
-        text_w21 = rendered_lines[0].get_width()
-        text_w22 = rendered_lines[1].get_width()
-        text_h21 = rendered_lines[0].get_height()
-        text_h22 = rendered_lines[1].get_height()
-        text_x21 = SIZE_SCREEN[0] // 2 - text_w21 // 2
-        text_x22 = SIZE_SCREEN[0] // 2 - text_w22 // 2
-        text_y21 = SIZE_SCREEN[1] // 2 - text_h21 // 2
-        text_y22 = text_y21 + text_h21
-        background = pygame.Surface([max(text_w21, text_w22) + 20, text_h21 + text_h22 + 20])
-        background.fill((255, 255, 255))
-        background.set_alpha(170)
-        screen.blit(background, (min(text_x21, text_x22) - 10, text_y21 - 10))
-        screen.blit(rendered_lines[0], (text_x21, text_y21))
-        screen.blit(rendered_lines[1], (text_x22, text_y22))
+        size = int(SIZE_SCREEN[0] // 100 * 4)
+        lines = (
+            (size, PHRASES[LANGUAGE]['home_information'][0]),
+            (size, PHRASES[LANGUAGE]['home_information'][1])
+        )
+        draw_text_in_black_screen(lines)
 
     def draw_information_pause(self):
-        size = int(SIZE_SCREEN[0] // 100 * 3)
-        font = pygame.font.Font(None, size)
+        size1 = int(SIZE_SCREEN[0] // 100 * 4)
+        size2 = int(SIZE_SCREEN[0] // 100 * 3)
+        lines = (
+            (size1, PHRASES[LANGUAGE]['pause']),
+            (size2, PHRASES[LANGUAGE]['pause_information'][0]),
+            (size2, PHRASES[LANGUAGE]['pause_information'][1])
+        )
 
-        text = font.render(PHRASES[LANGUAGE]['pause'], True, (0, 0, 0))
-        text_w = text.get_width()
-        text_h = text.get_height()
-        text_x = SIZE_SCREEN[0] // 2 - text_w // 2
-        text_y = SIZE_SCREEN[1] // 2 - text_h // 2
-        background = pygame.Surface([text_w + 20, text_h + 20])
-        background.fill((255, 255, 255))
-        background.set_alpha(170)
-        screen.blit(background, (text_x - 10, text_y - 10))
-        screen.blit(text, (text_x, text_y))
-
-        size2 = int(SIZE_SCREEN[0] // 100 * 2)
-        font2 = pygame.font.Font(None, size2)
-        text_lines = PHRASES[LANGUAGE]['pause_information']
-        rendered_lines = [font2.render(line, True, (0, 0, 0)) for line in text_lines]
-        text_w21 = rendered_lines[0].get_width()
-        text_w22 = rendered_lines[1].get_width()
-        text_h21 = rendered_lines[0].get_height()
-        text_h22 = rendered_lines[1].get_height()
-        text_x21 = SIZE_SCREEN[0] // 2 - text_w21 // 2
-        text_x22 = SIZE_SCREEN[0] // 2 - text_w22 // 2
-        text_y21 = text_y + text_h + 50
-        text_y22 = text_y21 + text_h21
-        background = pygame.Surface([text_w21 + 20, text_h21 + text_h22 + 20])
-        background.fill((255, 255, 255))
-        background.set_alpha(170)
-        screen.blit(background, (text_x21 - 10, text_y21 - 10))
-        screen.blit(rendered_lines[0], (text_x21, text_y21))
-        screen.blit(rendered_lines[1], (text_x22, text_y22))
+        draw_text_in_black_screen(lines)
 
     def draw_fall_shapes(self):
         board_copy = copy.deepcopy(self.board.board)
@@ -733,12 +765,12 @@ class MainGame:
                 if [index2, index] in [j for i in self.shape_now.coords for j in i]:
                     board_copy[index][index2] = 0
         draw_shapes(self.left, self.top, screen, board_copy,
-                    [self.color1, self.color2, self.color3, self.color4])
+                    [self.color1, self.color2, self.color3, self.color4], SIZE_BLOCK)
 
     def draw_information(self):
         size = int(SIZE_SCREEN[0] // 100 * 2.5)
         font = pygame.font.Font(None, size)
-        text = font.render(f"{PHRASES[LANGUAGE]['score']}: {self.points}", True, (232, 229, 62))
+        text = font.render(f"{PHRASES[LANGUAGE]['score']}: {self.score}", True, (232, 229, 62))
         text_w = text.get_width()
         text_h = text.get_height()
         text_x = self.left - text_w - SIZE_BLOCK * 3
@@ -817,7 +849,7 @@ class MainGame:
         group_buttons.append(GroupButtons([pause_button, home_button]))
 
     def update_shapes(self, action):
-        if self.activity and not self.open_home and not self.finish:
+        if self.parent.activity_window is None:
             if self.shape_now.update_move:
                 self.shape_now.move(action)
                 self.time_update_shape += self.v_level
@@ -826,8 +858,9 @@ class MainGame:
                     self.shape_now.move('down')
 
             else:
-                sound = pygame.mixer.Sound('../data/music/shape_fall.mp3')
-                sound.play()
+                if SOUND == 'on':
+                    sound = pygame.mixer.Sound('../data/music/shape_fall.mp3')
+                    sound.play()
                 self.update_shape = True
                 self.checking_lines()
 
@@ -858,367 +891,71 @@ class MainGame:
                 break
 
     def scoring_points(self, count_lines):
+        if SOUND == 'on':
+            sound = pygame.mixer.Sound('../data/music/high_score.mp3')
+            sound.set_volume(0.5)
+            self.parent.sound_main.set_volume(0.0)
+            sound.play()
         if count_lines == 1:
-            self.points += 40 * (self.count_levels + 1)
+            self.score += 40 * (self.count_levels + 1)
         elif count_lines == 2:
-            self.points += 100 * (self.count_levels + 1)
+            self.score += 100 * (self.count_levels + 1)
         elif count_lines == 3:
-            self.points += 300 * (self.count_levels + 1)
+            self.score += 300 * (self.count_levels + 1)
         elif count_lines == 4:
-            self.points += 1200 * (self.count_levels + 1)
+            self.score += 1200 * (self.count_levels + 1)
+        if SOUND == 'on':
+            self.parent.sound_main.set_volume(0.1)
 
-    def scoring_levels(self, count_new_levels):
-        for i in range(count_new_levels):
+    def scoring_levels(self, count_lines):
+        for i in range(count_lines):
             self.count_lines += 1
             if self.count_lines % 10 == 0:
                 self.count_levels += 1
 
     def set_pause(self):
         if self.activity:
+            self.parent.activity_window = self.draw_information_pause
             self.activity = False
+            self.parent.button_open_black_screen = self.main_game_buttons['pause_button']
+            for name in self.main_game_buttons:
+                if self.main_game_buttons[name] != self.parent.button_open_black_screen:
+                    if self.main_game_buttons[name].be is False:
+                        self.main_game_buttons[name].be = True
+                    else:
+                        self.main_game_buttons[name].be = False
 
         else:
+            for name in self.main_game_buttons:
+                if self.main_game_buttons[name] != self.parent.button_open_black_screen:
+                    if self.main_game_buttons[name].be is False:
+                        self.main_game_buttons[name].be = True
+                    else:
+                        self.main_game_buttons[name].be = False
+            self.parent.activity_window = None
             self.activity = True
+            self.parent.button_open_black_screen = None
             self.main_game_buttons['pause_button'].image = self.main_game_buttons['pause_button'].prev_image
 
     def go_to_home(self):
         if self.open_home:
+            for name in self.main_game_buttons:
+                if self.main_game_buttons[name] != self.parent.button_open_black_screen:
+                    if self.main_game_buttons[name].be is False:
+                        self.main_game_buttons[name].be = True
+                    else:
+                        self.main_game_buttons[name].be = False
+            self.parent.activity_window = None
+            self.parent.button_open_black_screen = None
             self.open_home = False
         else:
+            self.parent.activity_window = self.draw_information_home
+            self.parent.button_open_black_screen = self.main_game_buttons['home_button']
             self.activity = True
             self.open_home = True
-
-
-class Shape(pygame.sprite.Sprite):
-    def __init__(self, level, parent=None):
-        super().__init__(shape_sprites)
-        self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
-        self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
-        color_random = random.choice(COLORS)
-        self.color1 = pygame.Color(*color_random)
-        self.color2 = pygame.Color(*color_random)
-        self.color3 = pygame.Color(*color_random)
-        self.color4 = pygame.Color(*color_random)
-        self.form = random.randint(1, 7)
-        self.rotate = 0
-        self.color = random.choice(COLORS)
-        self.set_color()
-        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * SIZE_BLOCK
-        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * SIZE_BLOCK
-        self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
-        self.rect = self.image.get_rect()
-        self.coords = []
-        self.cube_coords = []
-        # После вставки в поле
-        self.coordinates = None
-        self.v = (0.8 - (level * 0.007)) ** level
-        self.update_move = True
-        self.parent = parent
-
-    def set_color(self):
-        hsv1 = self.color1.hsva
-        hsv2 = self.color2.hsva
-        hsv3 = self.color3.hsva
-        hsv4 = self.color4.hsva
-        self.color1.hsva = (hsv1[0], hsv1[1], 100, hsv1[3])
-        self.color2.hsva = (hsv2[0], hsv2[1], 75, hsv1[3])
-        self.color3.hsva = (hsv3[0], hsv3[1], 60, hsv1[3])
-        self.color4.hsva = (hsv4[0], hsv3[1], 50, hsv1[3])
-
-    def set_coord_board(self):
-        self.coords = []
-        start_x = START_COORDINATES[self.form][0]
-        for i in range(len(START_SHAPES[self.form])):
-            self.coords.append([])
-            for j in range(len(START_SHAPES[self.form][0])):
-                if START_SHAPES[self.form][i][j] != 0:
-                    self.coords[-1].append([start_x + j, i])
-                self.parent.board.board[i][start_x + j] += START_SHAPES[self.form][i][j]
-
-    def set_coord_cube_board(self):
-        self.cube_coords = []
-        start_x = START_COORDINATES[self.form][0]
-        for i in range(len(TYPES_OF_SHAPES[self.form][self.rotate])):
-            self.cube_coords.append([])
-            for j in range(len(TYPES_OF_SHAPES[self.form][self.rotate][0])):
-                self.cube_coords[-1].append([start_x + j, i])
-
-    def draw_start(self, x, y, surface):
-        i = 0
-        count_y = 0
-        n = len(TYPES_OF_SHAPES[self.form][self.rotate])
-        while i < n:
-            line = TYPES_OF_SHAPES[self.form][self.rotate][i]
-            if sum(line) != 0:
-                for j, cube in enumerate(line):
-                    if cube != 0:
-                        draw_cube(x + j * SIZE_BLOCK, y + count_y * SIZE_BLOCK, surface,
-                                  [self.color1, self.color2, self.color3, self.color4])
-                count_y += 1
-            i += 1
-
-    def move(self, action):
-        if action == 'left':
-            self.left_shape()
-
-        elif action == 'right':
-            self.right_shape()
-
-        elif action == 'down':
-            self.down_shape()
-
-        elif action == 'rotate':
-            self.rotate_shape()
-
-    def right_shape(self):
-        result = self.check_move_right()
-        if result is True:
-            for index, coord_line in enumerate(self.coords):
-                for index2, coord in enumerate(coord_line[::-1]):
-                    index2 = len(coord_line) - index2 - 1
-                    self.parent.board.board[coord[1]][coord[0]] = 0
-                    self.coords[index][index2] = [coord[0] + 1, coord[1]]
-                    self.parent.board.board[coord[1]][coord[0] + 1] = 1
-
-            for index, coord_line in enumerate(self.cube_coords):
-                for index2, coord in enumerate(coord_line):
-                    self.cube_coords[index][index2][0] += 1
-
-            self.rect.x += SIZE_BLOCK
-
-    def left_shape(self):
-        result = self.check_move_left()
-        if result is True:
-            for index, coord_line in enumerate(self.coords):
-                for index2, coord in enumerate(coord_line):
-                    self.parent.board.board[coord[1]][coord[0]] = 0
-                    self.coords[index][index2] = [coord[0] - 1, coord[1]]
-                    self.parent.board.board[coord[1]][coord[0] - 1] = 1
-
-            for index, coord_line in enumerate(self.cube_coords):
-                for index2, coord in enumerate(coord_line):
-                    self.cube_coords[index][index2][0] -= 1
-
-            self.rect.x -= SIZE_BLOCK
-
-    def down_shape(self):
-        result = self.check_move_down()
-        if result is True:
-
-            for index, coord_line in enumerate(self.coords[::-1]):
-                index = len(self.coords) - index - 1
-                for index2, coord in enumerate(coord_line):
-                    self.parent.board.board[coord[1]][coord[0]] = 0
-                    self.coords[index][index2] = [coord[0], coord[1] + 1]
-                    self.parent.board.board[coord[1] + 1][coord[0]] = 1
-
-            for index, coord_line in enumerate(self.cube_coords):
-                for index2, coord in enumerate(coord_line):
-                    self.cube_coords[index][index2][1] += 1
-
-            self.rect.y += SIZE_BLOCK
-        else:
-            self.update_move = False
-
-    def check_move_left(self):
-
-        for coord_line in self.coords:
-            coord = coord_line[0]
-            if coord[0] == 0 or self.parent.board.board[coord[1]][coord[0] - 1]:
-                return False
-        return True
-
-    def check_move_right(self):
-        for coord_line in self.coords:
-            coord = coord_line[-1]
-            if coord[0] == 9 or self.parent.board.board[coord[1]][coord[0] + 1]:
-                return False
-        return True
-
-    def check_move_down(self):
-        for coord_line in self.coords:
-            for coord in coord_line:
-                if coord[1] == 19 or (self.parent.board.board[coord[1] + 1][coord[0]] and
-                                      [coord[0], coord[1] + 1] not in [j for i in self.coords for j in i]):
-                    return False
-        return True
-
-    def rotate_shape(self):
-        self.rotate = (self.rotate + 1) % 4
-        # Новые координаты
-        new_coords = []
-        for index, coord_line in enumerate(TYPES_OF_SHAPES[self.form][self.rotate]):
-            if sum(coord_line) != 0:
-                new_coords.append([])
-                for index2, coord in enumerate(coord_line):
-                    coord = coord_line[index2]
-                    if coord == 1:
-                        new_coords[-1].append(self.cube_coords[index][index2])
-        # Проверка на корректность новых координат
-        for index, coord_line in enumerate(new_coords):
-            for index2, coord in enumerate(coord_line):
-                if coord[1] > 19 or coord[1] < 0 or coord[0] < 0 or coord[0] > 9:
-                    self.rotate = (self.rotate - 1) % 4
-                    return
-                elif (coord not in [j for i in self.coords for j in i]
-                      and self.parent.board.board[coord[1]][coord[0]] == 1):
-                    self.rotate = (self.rotate - 1) % 4
-                    return
-        # Установление новой фигуры на поле за место старой
-        for index, coord_line in enumerate(self.coords):
-            for index2, coord in enumerate(coord_line):
-                self.parent.board.board[coord[1]][coord[0]] = 0
-
-        for index, coord_line in enumerate(new_coords):
-            for index2, coord in enumerate(coord_line):
-                self.parent.board.board[coord[1]][coord[0]] = 1
-
-        self.coords = new_coords
-        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * SIZE_BLOCK
-        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * SIZE_BLOCK
-        self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
-        draw_shapes(0, 0, self.image, TYPES_OF_SHAPES[self.form][self.rotate],
-                    [self.color1, self.color2, self.color3, self.color4])
-
-
-class Board:
-    # создание поля
-    def __init__(self, count_width, count_height, left, top):
-        self.width = count_width
-        self.height = count_height
-        self.board = [[j - j for j in range(10 + i - i)] for i in range(20)]
-        self.left = left
-        self.top = top
-        self.cell_size = SIZE_BLOCK
-
-    def render(self):
-        x, y = 0, 0
-        for i in range(self.height):
-            for j in range(self.width):
-                pygame.draw.rect(screen, (181, 178, 5),
-                                 (self.left + x, self.top + y, self.cell_size, self.cell_size), 1)
-
-                x += self.cell_size
-            y += self.cell_size
-            x = 0
-
-
-class Particle(pygame.sprite.Sprite):
-    def __init__(self, x, y, dy, size):
-        super().__init__(particle_sprites)
-        self.image = pygame.Surface((size, size))
-        self.image.fill('white')
-        self.rect = pygame.Rect(x, y, size, size)
-        # у каждой частицы своя скорость — это вектор
-        self.velocity = [0, dy]
-        self.size = size
-        self.y = y
-
-    def update(self):
-        self.y -= self.velocity[1] / FPS
-        self.rect.y = self.y
-
-
-class Button(pygame.sprite.Sprite):
-    def __init__(self, coord, prev_image, current_image, click_image, group_sprites, action=None, music=None):
-        super().__init__(group_sprites)
-        if music is not None:
-            self.sound = pygame.mixer.Sound(f'../data/music/{music}')
-            self.sound.set_volume(1)
-        else:
-            self.sound = None
-        self.be = True
-        self.action = action
-        self.prev_image = prev_image
-        self.current_image = current_image
-        self.click_image = click_image
-        self.image = prev_image
-        self.name_new_image = 'prev'
-        self.k_x = self.image.get_width() // SIZE_BLOCK
-        self.k_y = self.image.get_height() // SIZE_BLOCK
-        self.rect = pygame.Rect(coord[0], coord[1], self.image.get_width(), self.image.get_height())
-
-    def check_do_select(self, up_click, down_click):
-        x = self.rect.x
-        y = self.rect.y
-        w = self.rect.w
-        h = self.rect.h
-        if self.be:
-            if up_click is not None and down_click is not None and \
-                    x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
-                    not (x <= up_click[0] <= x + w and y <= up_click[1] <= y + h):
-                self.image = self.prev_image
-                self.name_new_image = 'prev'
-            elif up_click is not None and down_click is not None and (
-                    x <= down_click[0] <= x + w and
-                    y <= down_click[1] <= h + y):
-                if self.sound is not None and SOUND == 'on':
-                    self.sound.play()
-                self.image = self.click_image
-                self.name_new_image = 'click'
-                if self.action is not None:
-                    self.action()
-                return True
-
-            elif down_click is not None and \
-                    x <= down_click[0] <= x + w and \
-                    y <= down_click[1] <= h + y:
-                self.name_new_image = 'current'
-                self.image = self.current_image
-
-    def update_image(self):
-        if self.name_new_image == 'prev':
-            self.image = self.prev_image
-        elif self.name_new_image == 'current':
-            self.image = self.current_image
-        else:
-            self.image = self.click_image
-
-    def update_coord(self, size_screen_copy):
-        ...
-        # window_pos = screen.get_pos()
-        # if window_pos[0] - self.rect.y != SIZE_SCREEN[1] - self.rect.y:
-        #     ...
-        #     #self.rect.y += SIZE_SCREEN[1] - self.rect.y
-        # if size_screen_copy[0] - self.rect.x != SIZE_SCREEN[0] - self.rect.x:
-        #     print('no')
-
-
-    def resize_image(self):
-        self.prev_image = pygame.transform.scale(self.prev_image, (self.k_x * SIZE_BLOCK, self.k_y * SIZE_BLOCK))
-        self.current_image = pygame.transform.scale(self.current_image, (self.k_x * SIZE_BLOCK, self.k_y * SIZE_BLOCK))
-        self.click_image = pygame.transform.scale(self.click_image, (self.k_x * SIZE_BLOCK, self.k_y * SIZE_BLOCK))
-        self.update_image()
-
-
-class GroupButtons:
-    def __init__(self, buttons):
-        self.buttons = buttons
-
-    def check_do_select_buttons_for_group(self, up_click, down_click):
-        current_button = None
-        for button in self.buttons:
-            result = button.check_do_select(up_click, down_click)
-            if result is True:
-                current_button = button
-                break
-            else:
-                ...
-                # flag = False
-                # for b in self.buttons:
-                #     if b.image == b.click_image:
-                #         flag = True
-                #         break
-                # if not flag:
-                #     button.image = button.click_image
-        return current_button
-
-
-if __name__ == '__main__':
-    pygame.display.set_caption('Тетрис')
-    fullname = os.path.join('../data/images', 'icon.png')
-    image_icon = pygame.image.load(fullname)
-    pygame.display.set_icon(image_icon)
-
-    game = Tetris()
-    game.start_game()
+            for name in self.main_game_buttons:
+                if self.main_game_buttons[name] != self.parent.button_open_black_screen:
+                    if self.main_game_buttons[name].be is False:
+                        self.main_game_buttons[name].be = True
+                    else:
+                        self.main_game_buttons[name].be = False

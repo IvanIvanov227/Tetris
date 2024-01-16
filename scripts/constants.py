@@ -1,3 +1,7 @@
+
+FPS = 60
+
+
 TYPES_OF_SHAPES = {
     1: {
         0: ((0, 0, 0, 0), (1, 1, 1, 1), (0, 0, 0, 0), (0, 0, 0, 0)),
@@ -95,7 +99,9 @@ PHRASES = {
         'complexity_easy': 'Легко',
         'complexity_normal': 'Нормально',
         'complexity_hard': 'Трудно',
-        'complexity': 'Сложность'
+        'complexity': 'Сложность',
+        'records': 'Рекорды',
+        'shapes': 'Фигуры'
     },
     'eng': {
         'information_rotate': 'Clockwise rotation',
@@ -120,7 +126,9 @@ PHRASES = {
         'complexity_easy': 'Easy',
         'complexity_normal': 'Normal',
         'complexity_hard': 'Hard',
-        'complexity': 'Complexity'
+        'complexity': 'Complexity',
+        'records': 'Records',
+        'shapes': 'Shapes'
     }
 
 }
