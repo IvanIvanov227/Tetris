@@ -7,7 +7,7 @@ import random
 
 import sqlite3
 
-from constants import START_SHAPES, START_COORDINATES, PHRASES, FPS
+from constants import START_COORDINATES, PHRASES, FPS
 from button import Button, GroupButtons, ComboButton
 from shape import Shape, draw_shapes
 from particle import Particle
@@ -97,7 +97,11 @@ def draw_text_in_black_screen(lines):
     for line in lines:
         size = line[0]
         font = pygame.font.Font(None, size)
-        text = font.render(line[1], True, (0, 0, 0))
+        if len(line) >= 3:
+            color = line[2]
+        else:
+            color = 'black'
+        text = font.render(line[1], True, color)
         text_w = text.get_width()
         text_h = text.get_height()
         text_x = SIZE_SCREEN[0] // 2 - text_w // 2
@@ -156,7 +160,8 @@ class Tetris:
                 if event.type == pygame.KEYDOWN:
                     self.check_key_down(event)
                 if event.type == pygame.KEYUP:
-                    if event.key in (pygame.K_s, pygame.K_DOWN):
+                    if event.key in (pygame.K_s, pygame.K_DOWN, pygame.K_a, pygame.K_w, pygame.K_d,
+                                     pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP):
                         self.new_shape = True
                         self.time_key_pressed = 0
                 if event.type == pygame.VIDEORESIZE:
@@ -187,10 +192,9 @@ class Tetris:
             self.coords_letters[index][0] = SIZE_SCREEN[0] // 2 + (-3 + index) * SIZE_BLOCK
             self.coords_letters[index][1] = y
 
-        buttons_start_sprites.empty()
-        self.start_buttons = dict()
-        group_buttons = []
-        self.load_buttons()
+        self.update_coords_and_size_buttons()
+        if self.main_game is not None:
+            self.main_game.update_sizes()
 
     def key_pressed_check(self, keys):
         if self.action is None and self.new_shape and not self.start_flag:
@@ -224,9 +228,10 @@ class Tetris:
         elif event.key == pygame.K_ESCAPE:
             if (self.main_game is not None and not self.main_game.open_home and
                     self.main_game.main_game_buttons['pause_button'].be):
-                self.main_game.main_game_buttons['pause_button'].image = (
-                    self.main_game.main_game_buttons['pause_button'].click_image)
-                self.main_game.set_pause()
+                self.main_game.main_game_buttons['pause_button'].name_new_image = 'prev' if \
+                    self.main_game.main_game_buttons['pause_button'].name_new_image == 'second' else 'second'
+                self.main_game.main_game_buttons['pause_button'].update_image()
+                self.main_game.set_pause(-1)
 
         elif event.key == pygame.K_q:
             if self.main_game is not None and self.main_game.open_home:
@@ -247,10 +252,7 @@ class Tetris:
                 del group_buttons[index]
                 break
         for name in self.start_buttons:
-            if self.start_buttons[name].be is False:
-                self.start_buttons[name].be = True
-            else:
-                self.start_buttons[name].be = False
+            self.start_buttons[name].be = True
         self.main_game = None
         self.button_open_black_screen = None
         self.activity_window = None
@@ -319,7 +321,6 @@ class Tetris:
         easy = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5, SIZE_BLOCK * 16), easy_img, easy_img2, easy_img2,
                       buttons_start_sprites,
                       lambda: self.click_level('easy'), 'default_button_click.mp3')
-
         normal = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8, SIZE_BLOCK * 16),
                         normal_img, normal_img2, normal_img2, buttons_start_sprites, lambda: self.click_level('normal'),
                         'default_button_click.mp3')
@@ -358,14 +359,111 @@ class Tetris:
         group_buttons.append(GroupButtons([easy, normal, hard]))
         group_buttons.append(GroupButtons([start_button]))
 
+    def update_coords_and_size_buttons(self):
+        self.start_buttons['start_button'].rect.x = SIZE_SCREEN[0] // 2 - 2.5 * SIZE_BLOCK
+        self.start_buttons['start_button'].rect.y = SIZE_SCREEN[1] // 2 + SIZE_BLOCK * 6
+        start_image_1 = load_image('start_russian_prev.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
+        start_image_2 = load_image('start_russian_click.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
+        self.start_buttons['start_button'].prev_image = start_image_1
+        self.start_buttons['start_button'].current_image = start_image_2
+        self.start_buttons['start_button'].click_image = start_image_1
+        self.start_buttons['start_button'].update_image()
+
+        self.start_buttons['up_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4
+        self.start_buttons['up_button'].rect.y = SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 4
+        self.start_buttons['up_button'].rect.w, self.start_buttons['up_button'].rect.h = SIZE_BLOCK * 2, SIZE_BLOCK * 2
+        image_up = load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.start_buttons['up_button'].prev_image = image_up
+        self.start_buttons['up_button'].current_image = image_up
+        self.start_buttons['up_button'].click_image = image_up
+        self.start_buttons['up_button'].update_image()
+
+        self.start_buttons['left_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4
+        self.start_buttons['left_button'].rect.y = SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2
+        self.start_buttons['left_button'].rect.w, self.start_buttons[
+            'left_button'].rect.h = SIZE_BLOCK * 2, SIZE_BLOCK * 2
+        image_left = load_image('left.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.start_buttons['left_button'].prev_image = image_left
+        self.start_buttons['left_button'].current_image = image_left
+        self.start_buttons['left_button'].click_image = image_left
+        self.start_buttons['left_button'].update_image()
+
+        self.start_buttons['right_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 2
+        self.start_buttons['right_button'].rect.y = SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 2
+        self.start_buttons['right_button'].rect.w, self.start_buttons[
+            'right_button'].rect.h = SIZE_BLOCK * 2, SIZE_BLOCK * 2
+        image_right = load_image('right.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.start_buttons['right_button'].prev_image = image_right
+        self.start_buttons['right_button'].current_image = image_right
+        self.start_buttons['right_button'].click_image = image_right
+        self.start_buttons['right_button'].update_image()
+
+        self.start_buttons['down_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4
+        self.start_buttons['down_button'].rect.y = SIZE_SCREEN[1] // 2 + SIZE_BLOCK // 10
+        self.start_buttons['down_button'].rect.w, self.start_buttons[
+            'down_button'].rect.h = SIZE_BLOCK * 2, SIZE_BLOCK * 2
+        image_down = load_image('down.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.start_buttons['down_button'].prev_image = image_down
+        self.start_buttons['down_button'].current_image = image_down
+        self.start_buttons['down_button'].click_image = image_down
+        self.start_buttons['down_button'].update_image()
+
+        self.start_buttons['easy_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
+        self.start_buttons['easy_button'].rect.y = SIZE_BLOCK * 16
+        easy_img = load_image(PHRASES['ru']['easy_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        easy_img2 = load_image(PHRASES['ru']['easy_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['easy_button'].prev_image = easy_img
+        self.start_buttons['easy_button'].current_image = easy_img2
+        self.start_buttons['easy_button'].click_image = easy_img2
+        self.start_buttons['easy_button'].update_image()
+
+        self.start_buttons['normal_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8
+        self.start_buttons['normal_button'].rect.y = SIZE_BLOCK * 16
+        normal_img2 = load_image(PHRASES['ru']['normal_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        normal_img = load_image(PHRASES['ru']['normal_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['normal_button'].prev_image = normal_img
+        self.start_buttons['normal_button'].current_image = normal_img2
+        self.start_buttons['normal_button'].click_image = normal_img2
+        self.start_buttons['normal_button'].update_image()
+
+        self.start_buttons['hard_button'].rect.x = SIZE_SCREEN[0] // 2 + SIZE_BLOCK * 1.5
+        self.start_buttons['hard_button'].rect.y = SIZE_BLOCK * 16
+        hard_img2 = load_image(PHRASES['ru']['hard_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        hard_img = load_image(PHRASES['ru']['hard_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        self.start_buttons['hard_button'].prev_image = hard_img
+        self.start_buttons['hard_button'].current_image = hard_img2
+        self.start_buttons['hard_button'].click_image = hard_img2
+        self.start_buttons['hard_button'].update_image()
+
+        self.start_buttons['language_button'].rect.x = SIZE_BLOCK
+        self.start_buttons['language_button'].rect.y = SIZE_SCREEN[1] - SIZE_BLOCK * 4 - 10
+        language_image_russian = load_image('russian.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        language_image_english = load_image('english.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        self.start_buttons['language_button'].prev_image = language_image_russian
+        self.start_buttons['language_button'].second_image = language_image_english
+        self.start_buttons['language_button'].update_image()
+
+        self.start_buttons['sound_button'].rect.x = SIZE_BLOCK
+        self.start_buttons['sound_button'].rect.y = SIZE_SCREEN[1] - SIZE_BLOCK * 2
+        sound_image = load_image('sound.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        not_sound_image = load_image('not_sound.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 1.5))
+        self.start_buttons['sound_button'].prev_image = sound_image
+        self.start_buttons['sound_button'].second_image = not_sound_image
+        self.start_buttons['sound_button'].update_image()
+
+        self.start_buttons['records_button'].rect.x = SIZE_SCREEN[0] - SIZE_BLOCK * 2 - 10
+        self.start_buttons['records_button'].rect.y = SIZE_BLOCK // 2
+        records_image = load_image('records.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.start_buttons['records_button'].prev_image = records_image
+        self.start_buttons['records_button'].current_image = records_image
+        self.start_buttons['records_button'].click_image = records_image
+        self.start_buttons['records_button'].update_image()
+
     def records_draw(self):
         if self.button_open_black_screen is not None:
             for name in self.start_buttons:
                 if self.start_buttons[name] != self.button_open_black_screen:
-                    if self.start_buttons[name].be is False:
-                        self.start_buttons[name].be = True
-                    else:
-                        self.start_buttons[name].be = False
+                    self.start_buttons[name].be = True
             self.button_open_black_screen = None
             self.activity_window = None
 
@@ -374,10 +472,7 @@ class Tetris:
             self.button_open_black_screen = self.start_buttons['records_button']
             for name in self.start_buttons:
                 if self.start_buttons[name] != self.button_open_black_screen:
-                    if self.start_buttons[name].be is False:
-                        self.start_buttons[name].be = True
-                    else:
-                        self.start_buttons[name].be = False
+                    self.start_buttons[name].be = False
 
     def draw_record_menu(self):
         best_level = int(self.cur.execute('SELECT best_level FROM best_results WHERE id = 1').fetchone()[0])
@@ -387,7 +482,7 @@ class Tetris:
         size = SIZE_SCREEN[0] // 100 * 4
         size2 = SIZE_SCREEN[0] // 100 * 3
         lines = (
-            (size, PHRASES[LANGUAGE]['records']),
+            (size, PHRASES[LANGUAGE]['records'], 'green'),
             (size2, f" "),
             (size2, f"{PHRASES[LANGUAGE]['score']}      {best_score}"),
             (size2, f" "),
@@ -401,7 +496,7 @@ class Tetris:
 
     def set_language(self, number):
         global LANGUAGE
-        if number == '1':
+        if number == 'prev':
             LANGUAGE = 'ru'
         else:
             LANGUAGE = 'eng'
@@ -443,7 +538,7 @@ class Tetris:
 
     def set_sound(self, number):
         global SOUND
-        if number == '1':
+        if number == 'prev':
             SOUND = 'on'
         else:
             SOUND = 'off'
@@ -458,10 +553,7 @@ class Tetris:
         self.main_game = MainGame(self.level, self)
 
         for name in self.start_buttons:
-            if self.start_buttons[name].be is False:
-                self.start_buttons[name].be = True
-            else:
-                self.start_buttons[name].be = False
+            self.start_buttons[name].be = False
         if self.level == 'easy':
             self.sleep_key_pressed = 0.2
         elif self.level == 'normal':
@@ -545,6 +637,9 @@ class Tetris:
                     if button != current_button:
                         button.image = button.prev_image
                         button.name_new_image = 'prev'
+                break
+        if None not in (self.down_click, self.up_click):
+            self.up_click, self.down_click = None, None
 
     def draw_letters(self):
         letters = ['T', 'E', 'T', 'R', 'I', 'S']
@@ -608,6 +703,7 @@ class MainGame:
         self.shape_now = None
         self.shape_future = None
         self.update_shape = True
+        self.new_record = False
         self.activity = True
         self.time_update_shape = 0
         self.start_game = True
@@ -670,19 +766,7 @@ class MainGame:
 
             self.shape_now.draw_start(0, 0, self.shape_now.image)
 
-            count_width = len(START_SHAPES[self.shape_future.form][0])
-            count_height = len(START_SHAPES[self.shape_future.form])
-
-            font = pygame.font.Font(None, int(SIZE_SCREEN[0] // 100 * 2.5))
-            text2 = font.render(PHRASES[LANGUAGE]['next_shape'][1], True, (240, 239, 224)).get_height()
-
-            x = self.left + 12 * SIZE_BLOCK
-            y = self.top * 2 + text2 + 5
-            x_center = x + SIZE_BLOCK * 3
-            y_center = y + SIZE_BLOCK * 3
-            self.shape_future.rect.x = x_center - SIZE_BLOCK * count_width // 2
-            self.shape_future.rect.y = y_center - SIZE_BLOCK * count_height // 2
-            self.shape_future.draw_start(0, 0, self.shape_future.image)
+            self.shape_future.update_coords_future_shape(self.left, self.top, SIZE_BLOCK, SIZE_SCREEN)
 
         shape_sprites.draw(screen)
         self.draw_fall_shapes()
@@ -695,6 +779,7 @@ class MainGame:
 
         if self.score > best_score:
             self.cur.execute('UPDATE best_results SET best_score = ? WHERE id = 1', (self.score,))
+            self.new_record = True
         if self.count_levels > best_level:
             self.cur.execute('UPDATE best_results SET best_level = ? WHERE id = 1', (self.count_levels,))
         if self.count_lines > more_lines:
@@ -704,22 +789,36 @@ class MainGame:
 
         self.connect.commit()
 
+    def set_view_coord(self):
+        self.left = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
+        self.top = (SIZE_SCREEN[1] - 21 * SIZE_BLOCK) // 2
+
+    def update_sizes(self):
+        self.update_coords_and_size_buttons()
+        self.set_view_coord()
+        self.board.set_view_coords(self.left, self.top, SIZE_BLOCK)
+        self.shape_now.update_size(SIZE_BLOCK)
+        self.shape_future.update_size(SIZE_BLOCK)
+        self.shape_now.update_coords_now_shape(self.left, self.top, SIZE_BLOCK, SIZE_SCREEN)
+        self.shape_future.update_coords_future_shape(self.left, self.top, SIZE_BLOCK, SIZE_SCREEN)
+
     def finish_game(self):
         for name in self.main_game_buttons:
-            if self.main_game_buttons[name].be is False:
-                self.main_game_buttons[name].be = True
-            else:
-                self.main_game_buttons[name].be = False
+            self.main_game_buttons[name].be = False
         self.parent.activity_window = self.finish_draw
 
     def finish_draw(self):
         draw_black_screen()
-        size = int(SIZE_SCREEN[0] // 100 * 4)
-        lines = (
+        size = int(SIZE_SCREEN[0] // 100 * 3)
+        lines = [
             (size, PHRASES[LANGUAGE]['finish_information'][0]),
             (size, PHRASES[LANGUAGE]['finish_information'][1]),
             (size, PHRASES[LANGUAGE]['finish_information'][2])
-        )
+        ]
+        if self.new_record:
+            size2 = int(SIZE_SCREEN[0] // 100 * 4)
+            lines.insert(0, (size2, f'{PHRASES[LANGUAGE]["new_record"]}: {self.score}', 'green'))
+            lines.insert(1, (size2, ''))
         draw_text_in_black_screen(lines)
 
         if not self.finish_music:
@@ -837,8 +936,8 @@ class MainGame:
         image_pause2 = load_image('pause2.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_pause.get_width() - 20
         y = 20
-        pause_button = Button((x, y), image_pause, image_pause, image_pause2, buttons_main_sprites, self.set_pause,
-                              'default_button_click.mp3')
+        pause_button = ComboButton((x, y), image_pause, image_pause2, buttons_main_sprites, self.set_pause,
+                                   'default_button_click.mp3')
 
         image_home = load_image('home.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_home.get_width() * 2 - 45
@@ -847,6 +946,22 @@ class MainGame:
         self.main_game_buttons['pause_button'] = pause_button
         self.main_game_buttons['home_button'] = home_button
         group_buttons.append(GroupButtons([pause_button, home_button]))
+
+    def update_coords_and_size_buttons(self):
+        self.main_game_buttons['pause_button'].rect.x = SIZE_SCREEN[0] - SIZE_BLOCK * 2 - 20
+        self.main_game_buttons['pause_button'].rect.y = 20
+        image_pause = load_image('pause.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        image_pause2 = load_image('pause2.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.main_game_buttons['pause_button'].prev_image = image_pause
+        self.main_game_buttons['pause_button'].second_image = image_pause2
+        self.main_game_buttons['pause_button'].update_image()
+
+        self.main_game_buttons['home_button'].rect.x = SIZE_SCREEN[0] - SIZE_BLOCK * 4 - 45
+        self.main_game_buttons['home_button'].rect.y = 20
+        home_image = load_image('home.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
+        self.main_game_buttons['home_button'].prev_image = home_image
+        self.main_game_buttons['home_button'].second_image = home_image
+        self.main_game_buttons['home_button'].update_image()
 
     def update_shapes(self, action):
         if self.parent.activity_window is None:
@@ -913,38 +1028,30 @@ class MainGame:
             if self.count_lines % 10 == 0:
                 self.count_levels += 1
 
-    def set_pause(self):
+    def set_pause(self, number_image):
         if self.activity:
             self.parent.activity_window = self.draw_information_pause
             self.activity = False
             self.parent.button_open_black_screen = self.main_game_buttons['pause_button']
             for name in self.main_game_buttons:
                 if self.main_game_buttons[name] != self.parent.button_open_black_screen:
-                    if self.main_game_buttons[name].be is False:
-                        self.main_game_buttons[name].be = True
-                    else:
-                        self.main_game_buttons[name].be = False
+                    self.main_game_buttons[name].be = False
 
         else:
             for name in self.main_game_buttons:
                 if self.main_game_buttons[name] != self.parent.button_open_black_screen:
-                    if self.main_game_buttons[name].be is False:
-                        self.main_game_buttons[name].be = True
-                    else:
-                        self.main_game_buttons[name].be = False
+                    self.main_game_buttons[name].be = True
+
             self.parent.activity_window = None
             self.activity = True
             self.parent.button_open_black_screen = None
-            self.main_game_buttons['pause_button'].image = self.main_game_buttons['pause_button'].prev_image
 
     def go_to_home(self):
         if self.open_home:
             for name in self.main_game_buttons:
                 if self.main_game_buttons[name] != self.parent.button_open_black_screen:
-                    if self.main_game_buttons[name].be is False:
-                        self.main_game_buttons[name].be = True
-                    else:
-                        self.main_game_buttons[name].be = False
+                    self.main_game_buttons[name].be = True
+
             self.parent.activity_window = None
             self.parent.button_open_black_screen = None
             self.open_home = False
@@ -955,7 +1062,4 @@ class MainGame:
             self.open_home = True
             for name in self.main_game_buttons:
                 if self.main_game_buttons[name] != self.parent.button_open_black_screen:
-                    if self.main_game_buttons[name].be is False:
-                        self.main_game_buttons[name].be = True
-                    else:
-                        self.main_game_buttons[name].be = False
+                    self.main_game_buttons[name].be = False

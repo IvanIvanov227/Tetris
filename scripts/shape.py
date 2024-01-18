@@ -72,6 +72,47 @@ class Shape(pygame.sprite.Sprite):
         self.update_move = True
         self.parent = parent
 
+    def update_size(self, size_block):
+        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * size_block
+        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * size_block
+        self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
+
+    def update_coords_now_shape(self, left, top, size_block, screen_size):
+        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * size_block
+        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * size_block
+        count_x = (self.rect.x - self.left) // self.size_block
+        count_y = (self.rect.y - self.top) // self.size_block
+        self.top = top
+        self.left = left
+        self.size_block = size_block
+        self.size_screen = screen_size
+        self.rect = pygame.Rect(count_x * size_block + self.left, count_y * size_block + self.top, width_image,
+                                height_image)
+
+        draw_shapes(0, 0, self.image, TYPES_OF_SHAPES[self.form][self.rotate],
+                    [self.color1, self.color2, self.color3, self.color4], self.size_block)
+
+    def update_coords_future_shape(self, left, top, size_block, screen_size):
+        self.left = left
+        self.top = top
+        count_width = len(START_SHAPES[self.form][0])
+        count_height = len(START_SHAPES[self.form])
+        width_image = len(TYPES_OF_SHAPES[self.form][self.rotate][0]) * size_block
+        height_image = len(TYPES_OF_SHAPES[self.form][self.rotate]) * size_block
+
+        height_text = pygame.font.Font(None, int(screen_size[0] // 100 * 2.5)).get_height()
+        self.size_block = size_block
+        self.size_screen = screen_size
+        x = self.left + 12 * size_block
+        y = self.top * 2 + height_text + 5
+        x_center = x + size_block * 3
+        y_center = y + size_block * 3
+        self.rect.x = x_center - size_block * count_width // 2
+        self.rect.y = y_center - size_block * count_height // 2
+        self.rect.w = width_image
+        self.rect.h = height_image
+        self.draw_start(0, 0, self.image)
+
     def set_color(self):
         hsv1 = self.color1.hsva
         hsv2 = self.color2.hsva

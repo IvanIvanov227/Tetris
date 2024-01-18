@@ -21,8 +21,8 @@ class Button(pygame.sprite.Sprite):
     def check_do_select(self, up_click, down_click, sound_condition):
         x = self.rect.x
         y = self.rect.y
-        w = self.rect.w
-        h = self.rect.h
+        w = self.image.get_width()
+        h = self.image.get_height()
         if self.be:
             if up_click is not None and down_click is not None and \
                     x <= down_click[0] <= x + w and y <= down_click[1] <= h + y and \
@@ -65,32 +65,38 @@ class ComboButton(pygame.sprite.Sprite):
             self.sound = None
         self.be = True
         self.action = action
-        self.first_image = first_image
+        self.prev_image = first_image
         self.second_image = second_image
-        self.image = self.first_image
-        self.name_new_image = '1'
+        self.image = self.prev_image
+        self.name_new_image = 'prev'
         self.rect = pygame.Rect(coord[0], coord[1], self.image.get_width(), self.image.get_height())
 
     def check_do_select(self, up_click, down_click, sound_condition):
         x = self.rect.x
         y = self.rect.y
-        w = self.rect.w
-        h = self.rect.h
+        w = self.image.get_width()
+        h = self.image.get_height()
         if self.be:
             if up_click is not None and down_click is not None and (
                     x <= down_click[0] <= x + w and
                     y <= down_click[1] <= h + y):
                 if self.sound is not None and sound_condition == 'on':
                     self.sound.play()
-                if self.name_new_image == '1':
+                if self.name_new_image == 'prev':
                     self.image = self.second_image
-                    self.name_new_image = '2'
+                    self.name_new_image = 'second'
                 else:
-                    self.image = self.first_image
-                    self.name_new_image = '1'
+                    self.image = self.prev_image
+                    self.name_new_image = 'prev'
                 if self.action is not None:
                     self.action(self.name_new_image)
                 return True
+
+    def update_image(self):
+        if self.name_new_image == 'prev':
+            self.image = self.prev_image
+        else:
+            self.image = self.second_image
 
 
 class GroupButtons:

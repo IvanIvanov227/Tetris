@@ -212,32 +212,31 @@ def check_move_down(self):
     #     self.image = pygame.Surface((width_image, height_image), pygame.SRCALPHA)
     #     self.draw(0, count * SIZE_BLOCK, self.image, self.coordinates)
 import pygame
+import sys
 
-# Инициализация Pygame
 pygame.init()
+screen = pygame.display.set_mode((400, 300))
+clock = pygame.time.Clock()
 
-# Установка размеров окна
-screen_width = 800
-screen_height = 600
-screen = pygame.display.set_mode((screen_width, screen_height))
+color = (255, 255, 255)
+rect = pygame.Rect(150, 100, 100, 100)
+is_visible = True
+last_toggle_time = pygame.time.get_ticks()
 
-# Создание поверхности для затемненного фона
-dark_surface = pygame.Surface((screen_width, screen_height))
-dark_surface.set_alpha(128)  # Устанавливаем уровень прозрачности (0 - полностью прозрачно, 255 - непрозрачно)
-dark_surface.fill((0, 0, 0))  # Заполняем поверхность черным цветом
-
-# Основной игровой цикл
-running = True
-while running:
+while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            pygame.quit()
+            sys.exit()
 
-    # Отображение всех элементов
-    screen.fill((255, 255, 255))  # Заливаем экран белым цветом
-    screen.blit(dark_surface, (0, 0))  # Отображаем затемненную поверхность
+    current_time = pygame.time.get_ticks()
+    if current_time - last_toggle_time > 500:  # меняем цвет каждые 500 миллисекунд
+        is_visible = not is_visible
+        last_toggle_time = current_time
+
+    screen.fill((0, 0, 0))  # очищаем экран
+    if is_visible:
+        pygame.draw.rect(screen, color, rect)  # рисуем объект, если он видимый
 
     pygame.display.flip()
-
-# Завершение работы Pygame
-pygame.quit()
+    clock.tick(60)

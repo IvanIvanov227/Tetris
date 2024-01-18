@@ -101,7 +101,8 @@ PHRASES = {
         'complexity_hard': 'Трудно',
         'complexity': 'Сложность',
         'records': 'Рекорды',
-        'shapes': 'Фигуры'
+        'shapes': 'Фигуры',
+        'new_record': 'НОВЫЙ РЕКОРД'
     },
     'eng': {
         'information_rotate': 'Clockwise rotation',
@@ -128,7 +129,8 @@ PHRASES = {
         'complexity_hard': 'Hard',
         'complexity': 'Complexity',
         'records': 'Records',
-        'shapes': 'Shapes'
+        'shapes': 'Shapes',
+        'new_record': 'NEW RECORD'
     }
 
 }

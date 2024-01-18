@@ -11,6 +11,11 @@ class Board:
         self.top = top
         self.cell_size = cell_size
 
+    def set_view_coords(self, left, top, cell_cize):
+        self.left = left
+        self.top = top
+        self.cell_size = cell_cize
+
     def render(self, screen):
         x, y = 0, 0
         for i in range(self.height):
