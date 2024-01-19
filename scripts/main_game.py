@@ -15,8 +15,8 @@ from board import Board
 
 SIZE_SCREEN = (1000, 600)
 screen = pygame.display.set_mode(SIZE_SCREEN, pygame.RESIZABLE)
-pygame.display.set_caption('Тетрис')
-fullname = os.path.join('../data/images', 'icon.png')
+pygame.display.set_caption('Тетрис: Кубический хаос')
+fullname = '..\data\images\icon.png'
 image_icon = pygame.image.load(fullname)
 pygame.display.set_icon(image_icon)
 SIZE_BLOCK = 0
@@ -54,10 +54,6 @@ def load_image(name, colorkey=None, size=None):
         image = pygame.transform.scale(image, (size[0], size[1]))
     return image
 
-
-# def increase_volume(sound, limit, step):
-#     if int(sound.get_volume()) != int(limit):
-#         sound.set_volume(sound.get_volume() + step)
 
 def draw_black_screen():
     black_sur = pygame.surface.Surface(SIZE_SCREEN)
@@ -287,6 +283,7 @@ class Tetris:
                               buttons_start_sprites,
                               self.click_start_button, 'default_button_click.mp3')
         self.start_buttons['start_button'] = start_button
+
         up_button = Button((SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 4, SIZE_SCREEN[1] // 2 - SIZE_BLOCK * 4),
                            load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
                            load_image('up.png', size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2)),
@@ -362,8 +359,10 @@ class Tetris:
     def update_coords_and_size_buttons(self):
         self.start_buttons['start_button'].rect.x = SIZE_SCREEN[0] // 2 - 2.5 * SIZE_BLOCK
         self.start_buttons['start_button'].rect.y = SIZE_SCREEN[1] // 2 + SIZE_BLOCK * 6
-        start_image_1 = load_image('start_russian_prev.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
-        start_image_2 = load_image('start_russian_click.png', colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
+        start_image_1 = load_image(PHRASES[LANGUAGE]['start_button_prev'],
+                                   colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
+        start_image_2 = load_image(PHRASES[LANGUAGE]['start_button_click'],
+                                   colorkey=-1, size=(5 * SIZE_BLOCK, SIZE_BLOCK * 2.5))
         self.start_buttons['start_button'].prev_image = start_image_1
         self.start_buttons['start_button'].current_image = start_image_2
         self.start_buttons['start_button'].click_image = start_image_1
@@ -410,8 +409,8 @@ class Tetris:
 
         self.start_buttons['easy_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 5
         self.start_buttons['easy_button'].rect.y = SIZE_BLOCK * 16
-        easy_img = load_image(PHRASES['ru']['easy_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        easy_img2 = load_image(PHRASES['ru']['easy_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        easy_img = load_image(PHRASES[LANGUAGE]['easy_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        easy_img2 = load_image(PHRASES[LANGUAGE]['easy_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
         self.start_buttons['easy_button'].prev_image = easy_img
         self.start_buttons['easy_button'].current_image = easy_img2
         self.start_buttons['easy_button'].click_image = easy_img2
@@ -419,8 +418,8 @@ class Tetris:
 
         self.start_buttons['normal_button'].rect.x = SIZE_SCREEN[0] // 2 - SIZE_BLOCK * 1.8
         self.start_buttons['normal_button'].rect.y = SIZE_BLOCK * 16
-        normal_img2 = load_image(PHRASES['ru']['normal_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        normal_img = load_image(PHRASES['ru']['normal_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        normal_img2 = load_image(PHRASES[LANGUAGE]['normal_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        normal_img = load_image(PHRASES[LANGUAGE]['normal_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
         self.start_buttons['normal_button'].prev_image = normal_img
         self.start_buttons['normal_button'].current_image = normal_img2
         self.start_buttons['normal_button'].click_image = normal_img2
@@ -428,8 +427,8 @@ class Tetris:
 
         self.start_buttons['hard_button'].rect.x = SIZE_SCREEN[0] // 2 + SIZE_BLOCK * 1.5
         self.start_buttons['hard_button'].rect.y = SIZE_BLOCK * 16
-        hard_img2 = load_image(PHRASES['ru']['hard_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
-        hard_img = load_image(PHRASES['ru']['hard_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        hard_img2 = load_image(PHRASES[LANGUAGE]['hard_button_click'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
+        hard_img = load_image(PHRASES[LANGUAGE]['hard_button_prev'], size=(SIZE_BLOCK * 3.2, SIZE_BLOCK * 1.5))
         self.start_buttons['hard_button'].prev_image = hard_img
         self.start_buttons['hard_button'].current_image = hard_img2
         self.start_buttons['hard_button'].click_image = hard_img2
@@ -941,8 +940,8 @@ class MainGame:
 
         image_home = load_image('home.png', -1, size=(SIZE_BLOCK * 2, SIZE_BLOCK * 2))
         x = SIZE_SCREEN[0] - image_home.get_width() * 2 - 45
-        home_button = Button((x, y), image_home, image_home, image_home, buttons_main_sprites, self.go_to_home,
-                             'default_button_click.mp3')
+        home_button = ComboButton((x, y), image_home, image_home, buttons_main_sprites, self.go_to_home,
+                                  'default_button_click.mp3')
         self.main_game_buttons['pause_button'] = pause_button
         self.main_game_buttons['home_button'] = home_button
         group_buttons.append(GroupButtons([pause_button, home_button]))
@@ -1046,7 +1045,7 @@ class MainGame:
             self.activity = True
             self.parent.button_open_black_screen = None
 
-    def go_to_home(self):
+    def go_to_home(self, name_image):
         if self.open_home:
             for name in self.main_game_buttons:
                 if self.main_game_buttons[name] != self.parent.button_open_black_screen:
