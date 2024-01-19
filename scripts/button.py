@@ -110,13 +110,12 @@ class GroupButtons:
             if result is True:
                 current_button = button
                 break
-            else:
-                ...
-                # flag = False
-                # for b in self.buttons:
-                #     if b.image == b.click_image:
-                #         flag = True
-                #         break
-                # if not flag:
-                #     button.image = button.click_image
+            elif type(button) != ComboButton:
+                flag = False
+                for b in self.buttons:
+                    if type(b) != ComboButton and b.image == b.click_image:
+                        flag = True
+                        break
+                if not flag:
+                    button.image = button.current_image
         return current_button
